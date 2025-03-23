@@ -2,36 +2,32 @@ package infrastructure
 
 import (
 	"database/sql"
+	"esp32/src/core"
 	"esp32/src/internal/temperatura/application"
 	"esp32/src/internal/temperatura/infrastructure/controllers"
-	"esp32/src/core"
 )
 
 type TemperatureDependencies struct {
 	DB   *sql.DB
-	MQTT *core.MQTTConnection
+	AMQP *core.AMQPConnection
 }
 
-func NewTemperatureDependencies(db *sql.DB, mqtt *core.MQTTConnection) *TemperatureDependencies {
-	return &TemperatureDependencies{
-		DB:   db,
-		MQTT: mqtt,
-	}
+func NewTemperatureDependencies(db *sql.DB, amqp *core.AMQPConnection) *TemperatureDependencies {
+	return &TemperatureDependencies{DB: db, AMQP: amqp}
 }
 
 func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
-	mqttProducer := NewMQTTProducer(d.MQTT.Client)
-	temperatureRepo := NewTemperatureRepo(d.DB, mqttProducer)
+	amqpConsumer := NewAMQPConsumer(d.AMQP, nil)
 
+	temperatureRepo := NewTemperatureRepo(d.DB, amqpConsumer)
 	createTemperatureUseCase := application.NewCreateTemperature(temperatureRepo)
 	getByHamsterUseCase := application.NewGetByHamster(temperatureRepo)
-
 
 	createTemperatureController := controllers.NewCreateTemperatureController(createTemperatureUseCase)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	return NewTemperatureRoutes(
-		createTemperatureController,
-		getByHamsterController,
-	)
+	amqpConsumer.createTempC = createTemperatureController
+	go amqpConsumer.Consume()
+
+	return NewTemperatureRoutes(createTemperatureController, getByHamsterController)
 }

@@ -8,19 +8,23 @@ import (
 )
 
 func Init() {
+	// Conectar a la base de datos
 	db, err := core.ConnectDB()
 	if err != nil {
 		log.Fatal("Error al conectar a la base de datos:", err)
 	}
 
-	mqttConn, err := core.NewMQTTConnection()
+	// Conectar a RabbitMQ (AMQP)
+	amqpConn, err := core.NewAMQPConnection() // Aquí usas AMQPConnection en lugar de MQTT
 	if err != nil {
-		log.Fatal("Error al conectar a MQTT:", err)
+		log.Fatal("Error al conectar a RabbitMQ:", err)
 	}
-	defer mqttConn.Close()
+	defer amqpConn.Close()
 
-	temperatureDependencies := temperatureDeps.NewTemperatureDependencies(db, mqttConn)
+	// Crear las dependencias de temperatura pasando la conexión AMQP
+	temperatureDependencies := temperatureDeps.NewTemperatureDependencies(db, amqpConn)
 	temperatureRoutes := temperatureDependencies.GetRoutes()
 
+	// Ejecutar el servidor con las rutas de temperatura
 	server.Run(temperatureRoutes)
 }
