@@ -24,7 +24,7 @@ func NewAMQPConsumer(conn *core.AMQPConnection, createTempC *controllers.CreateT
 
 func (c *AMQPConsumer) Consume() {
 	msgs, err := c.conn.Channel.Consume(
-		"sensor_data",
+		"sensor_temp",
 		"",
 		true,
 		false,

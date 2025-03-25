@@ -24,7 +24,7 @@ func NewAMQPConsumer(conn *core.AMQPConnection, createTempC *controllers.CreateH
 
 func (c *AMQPConsumer) Consume() {
 	msgs, err := c.conn.Channel.Consume(
-		"sensor_data",
+		"sensor_humedad",
 		"",
 		true,
 		false,
@@ -41,7 +41,7 @@ func (c *AMQPConsumer) Consume() {
 
 		var sensorData struct {
 			IDHamster   int     `json:"idhamster"`
-			Humedad float64 `json:"humidity"`
+			Humedad float64 `json:"humedad"`
 
 		}
 

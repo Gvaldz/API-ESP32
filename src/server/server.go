@@ -2,7 +2,7 @@ package server
 
 import (
 	temperatureRouters 	"esp32/src/internal/temperatura/infrastructure"
-	motionRouters 		"esp32/src/internal/motion/infrastructure"
+	// motionRouters 		"esp32/src/internal/motion/infrastructure"
 	humidityRouters 	"esp32/src/internal/humidity/infrastructure"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -10,7 +10,7 @@ import (
 
 func Run(
 	temperatureRouters *temperatureRouters.TemperatureRoutes,
-	motionRouters *motionRouters.MotionRoutes,
+	// motionRouters *motionRouters.MotionRoutes,
 	humidityRouters *humidityRouters.HumidityRoutes,
 ) {
 	r := gin.Default()
@@ -24,7 +24,7 @@ func Run(
 	}))
 
 	temperatureRouters.AttachRoutes(r)
-	motionRouters.AttachRoutes(r)
+	// motionRouters.AttachRoutes(r)
 	humidityRouters.AttachRoutes(r)
 
 	r.Run(":8080")
