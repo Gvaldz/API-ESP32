@@ -10,13 +10,11 @@ import (
 	"esp32/src/internal/temperatura/infrastructure/controllers"
 )
 
-// AMQPConsumer estructura para consumir mensajes de la cola.
 type AMQPConsumer struct {
 	conn        *core.AMQPConnection
 	createTempC *controllers.CreateTemperatureController
 }
 
-// NewAMQPConsumer constructor
 func NewAMQPConsumer(conn *core.AMQPConnection, createTempC *controllers.CreateTemperatureController) *AMQPConsumer {
 	return &AMQPConsumer{
 		conn:        conn,
@@ -24,7 +22,6 @@ func NewAMQPConsumer(conn *core.AMQPConnection, createTempC *controllers.CreateT
 	}
 }
 
-// Método para consumir mensajes
 func (c *AMQPConsumer) Consume() {
 	msgs, err := c.conn.Channel.Consume(
 		"sensor_data",

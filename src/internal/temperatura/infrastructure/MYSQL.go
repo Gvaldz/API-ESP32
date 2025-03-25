@@ -8,10 +8,9 @@ import (
 
 type TemperatureRepo struct {
 	db           *sql.DB
-	amqpConsumer *AMQPConsumer // AMQPConsumer para recibir mensajes
+	amqpConsumer *AMQPConsumer 
 }
 
-// Constructor
 func NewTemperatureRepo(db *sql.DB, amqpConsumer *AMQPConsumer) *TemperatureRepo {
 	return &TemperatureRepo{
 		db:           db,
@@ -19,7 +18,6 @@ func NewTemperatureRepo(db *sql.DB, amqpConsumer *AMQPConsumer) *TemperatureRepo
 	}
 }
 
-// Método para guardar temperatura en la base de datos
 func (r *TemperatureRepo) CreateTemperature(temperature domain.Temperature) error {
 	query := "INSERT INTO temperatura (idhamster, temperatura, hora_registro) VALUES (?, ?, NOW())"
 	_, err := r.db.Exec(query, temperature.IDHamster, temperature.Temperatura)
@@ -30,7 +28,6 @@ func (r *TemperatureRepo) CreateTemperature(temperature domain.Temperature) erro
 	return nil
 }
 
-// Método para obtener las temperaturas de un hámster por su ID
 func (r *TemperatureRepo) GetByHamster(IDHamster int32) ([]domain.Temperature, error) {
 	query := "SELECT idtemperatura, idhamster, temperatura, hora_registro FROM temperatura WHERE idhamster = ?"
 	rows, err := r.db.Query(query, IDHamster)

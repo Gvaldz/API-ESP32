@@ -2,12 +2,14 @@ package server
 
 import (
 	temperatureRouters 	"esp32/src/internal/temperatura/infrastructure"
+	motionRouters 		"esp32/src/internal/motion/infrastructure"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func Run(
 	temperatureRouters *temperatureRouters.TemperatureRoutes,
+	motionRouters *motionRouters.MotionRoutes,
 ) {
 	r := gin.Default()
 
@@ -20,6 +22,7 @@ func Run(
 	}))
 
 	temperatureRouters.AttachRoutes(r)
+	motionRouters.AttachRoutes(r)
 
 	r.Run(":8080")
 }
