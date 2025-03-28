@@ -2,7 +2,7 @@ package cmd
 
 import (
 	temperatureDeps "esp32/src/internal/temperatura/infrastructure"
-	// motionDeps	 	"esp32/src/internal/motion/infrastructure"
+	motionDeps	 	"esp32/src/internal/motion/infrastructure"
 	humidityDeps 	"esp32/src/internal/humidity/infrastructure"
 	"esp32/src/core"
 	"esp32/src/server"
@@ -24,11 +24,11 @@ func Init() {
 	temperatureDependencies := temperatureDeps.NewTemperatureDependencies(db, amqpConn)
 	temperatureRoutes := temperatureDependencies.GetRoutes()
 
-	// motionDependences := motionDeps.NewMotionDependences(db, amqpConn)
-	// motionRoutes := motionDependences.GetRoutes()
+	motionDependences := motionDeps.NewMotionDependences(db, amqpConn)
+	motionRoutes := motionDependences.GetRoutes()
 
 	humidityDependences := humidityDeps.NewHumidityDependeces(db, amqpConn)
 	humidityRoutes := humidityDependences.GetRoutes()
 
-	server.Run(temperatureRoutes, humidityRoutes)
+	server.Run(temperatureRoutes, motionRoutes, humidityRoutes)
 }

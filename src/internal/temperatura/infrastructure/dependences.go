@@ -26,7 +26,7 @@ func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
 	createTemperatureController := controllers.NewCreateTemperatureController(createTemperatureUseCase)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	amqpConsumer.createTempC = createTemperatureController
+	amqpConsumer.createTemp = createTemperatureController
 	go amqpConsumer.Consume()
 
 	return NewTemperatureRoutes(createTemperatureController, getByHamsterController)

@@ -26,7 +26,7 @@ func (d *HumidityDependeces) GetRoutes() *HumidityRoutes {
 	createHumidityController := controllers.NewCreateHumidityController(createHumidityUseCase)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	amqpConsumer.createTempC = createHumidityController
+	amqpConsumer.createHumC = createHumidityController
 	go amqpConsumer.Consume()
 
 	return NewHumidityRoutes(createHumidityController, getByHamsterController)
