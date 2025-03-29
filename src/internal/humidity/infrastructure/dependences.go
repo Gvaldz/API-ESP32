@@ -5,7 +5,6 @@ import (
 	"esp32/src/core"
 	"esp32/src/internal/humidity/application"
 	"esp32/src/internal/humidity/infrastructure/controllers"
-	amqpConsumer "esp32/src/internal/consumer_amqp"
 )
 
 type HumidityDependencies struct {
@@ -25,18 +24,10 @@ func (d *HumidityDependencies) GetRoutes() *HumidityRoutes {
 	createHumidityUseCase := application.NewCreateHumidity(humidityRepo)
 	getByHamsterUseCase := application.NewGetByHamster(humidityRepo)
 
-	// Crear el controlador de humedad
+	// Crear los controladores de humedad
 	createHumidityController := controllers.NewCreateHumidityController(createHumidityUseCase)
-
-	// Crear el consumidor AMQP y asociar el controlador de humedad
-	amqpConsumer := amqpConsumer.NewRabbitMQConsumer(d.AMQP, createHumidityController,nil, nil )
-	// Crear el controlador para obtener humedad por hámster
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	// Iniciar el consumidor AMQP en una goroutine
-	go amqpConsumer.Start()
-
-
-	// Devolver las rutas de humedad
+	// Devolver las rutas de humedad con el controlador necesario
 	return NewHumidityRoutes(createHumidityController, getByHamsterController)
 }

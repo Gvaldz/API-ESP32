@@ -1,34 +1,48 @@
-package cmd
+package cmd 
 
 import (
 	temperatureDeps "esp32/src/internal/temperatura/infrastructure"
-	motionDeps	 	"esp32/src/internal/motion/infrastructure"
-	humidityDeps 	"esp32/src/internal/humidity/infrastructure"
+	motionDeps "esp32/src/internal/motion/infrastructure"
+	humidityDeps "esp32/src/internal/humidity/infrastructure"
+	amqpConsumer "esp32/src/internal/consumer_amqp"
 	"esp32/src/core"
 	"esp32/src/server"
 	"log"
 )
 
 func Init() {
+	// Conectar a la base de datos
 	db, err := core.ConnectDB()
 	if err != nil {
 		log.Fatal("Error al conectar a la base de datos:", err)
 	}
 
+	// Conectar a RabbitMQ
 	amqpConn, err := core.NewAMQPConnection() 
 	if err != nil {
 		log.Fatal("Error al conectar a RabbitMQ:", err)
 	}
 	defer amqpConn.Close()
 
+	// Crear dependencias de cada sensor
 	temperatureDependencies := temperatureDeps.NewTemperatureDependencies(db, amqpConn)
-	temperatureRoutes := temperatureDependencies.GetRoutes()
-
-	motionDependences := motionDeps.NewMotionDependences(db, amqpConn)
-	motionRoutes := motionDependences.GetRoutes()
-
+	motionDependences := motionDeps.NewMotionDependencies(db, amqpConn)
 	humidityDependences := humidityDeps.NewHumidityDependencies(db, amqpConn)
-	humidityRoutes := humidityDependences.GetRoutes()
 
-	server.Run(temperatureRoutes, motionRoutes, humidityRoutes)
+	// Obtener controladores de cada sensor
+	createHumidityController := humidityDependences.GetRoutes().CreateHumidityController
+	createTempController := temperatureDependencies.GetRoutes().CreateTemperatureController
+	createMovController := motionDependences.GetRoutes().CreateMotionController
+
+	// Verificar que no sean nil antes de iniciar RabbitMQ
+	if createHumidityController == nil || createTempController == nil || createMovController == nil {
+		log.Fatal("❌ Error: Uno o más controladores no se inicializaron correctamente.")
+	}
+
+	// Iniciar el consumidor AMQP
+	consumer := amqpConsumer.NewRabbitMQConsumer(amqpConn, createHumidityController, createTempController, createMovController)
+	go consumer.Start() // Se ejecuta en una goroutine para no bloquear
+
+	// Iniciar el servidor HTTP
+	server.Run(temperatureDependencies.GetRoutes(), motionDependences.GetRoutes(), humidityDependences.GetRoutes())
 }
