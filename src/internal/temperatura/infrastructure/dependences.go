@@ -5,6 +5,7 @@ import (
 	"esp32/src/core"
 	"esp32/src/internal/temperatura/application"
 	"esp32/src/internal/temperatura/infrastructure/controllers"
+	amqpConsumer "esp32/src/internal/consumer_amqp"
 )
 
 type TemperatureDependencies struct {
@@ -17,17 +18,31 @@ func NewTemperatureDependencies(db *sql.DB, amqp *core.AMQPConnection) *Temperat
 }
 
 func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
-	amqpConsumer := NewAMQPConsumer(d.AMQP, nil)
+	// Crear el repositorio de temperatura
+	temperatureRepo := NewTemperatureRepo(d.DB, nil)
 
-	temperatureRepo := NewTemperatureRepo(d.DB, amqpConsumer)
+	// Crear los casos de uso
 	createTemperatureUseCase := application.NewCreateTemperature(temperatureRepo)
 	getByHamsterUseCase := application.NewGetByHamster(temperatureRepo)
 
+	// Crear el controlador de temperatura
 	createTemperatureController := controllers.NewCreateTemperatureController(createTemperatureUseCase)
+
+
+
+	// Crear el consumidor AMQP y asociar los controladores
+	amqpConsumer := amqpConsumer.NewRabbitMQConsumer(d.AMQP, nil, createTemperatureController, nil)
+
+	// Asociar el consumidor AMQP al controlador de temperatura y humedad
+	amqpConsumer.CreateTemp = createTemperatureController
+	
+
+	// Crear el controlador para obtener la temperatura por hámster
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	amqpConsumer.createTemp = createTemperatureController
-	go amqpConsumer.Consume()
+	// Iniciar el consumidor AMQP en una goroutine
+	go amqpConsumer.Start()
 
+	// Devolver las rutas de temperatura y humedad
 	return NewTemperatureRoutes(createTemperatureController, getByHamsterController)
 }

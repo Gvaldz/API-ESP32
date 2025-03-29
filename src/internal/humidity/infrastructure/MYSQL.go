@@ -3,15 +3,16 @@ package infrastructure
 import (
 	"database/sql"
 	"esp32/src/internal/humidity/domain"
+	amqpConsumer "esp32/src/internal/consumer_amqp"
 	"fmt"
 )
 
 type HumidityRepo struct {
 	db           *sql.DB
-	amqpConsumer *AMQPConsumer 
+	amqpConsumer *amqpConsumer.RabbitMQConsumer
 }
 
-func NewHumidityRepo(db *sql.DB, amqpConsumer *AMQPConsumer) *HumidityRepo {
+func NewHumidityRepo(db *sql.DB, amqpConsumer *amqpConsumer.RabbitMQConsumer) *HumidityRepo {
 	return &HumidityRepo{
 		db:           db,
 		amqpConsumer: amqpConsumer,

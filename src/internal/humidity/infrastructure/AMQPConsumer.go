@@ -26,58 +26,65 @@ func NewAMQPConsumer(conn *core.AMQPConnection, createHumC *controllers.CreateHu
 }
 
 func (c *AMQPConsumer) Consume() {
-    // Cargar variables de entorno
-    if err := godotenv.Load(); err != nil {
-        log.Fatalf("Error cargando .env: %v", err)
-    }
+     // Cargar variables de entorno
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Error cargando .env: %v", err)
+	}
 
-    amqpServer := os.Getenv("AMQP_SERVER")
-    exchangeName := "sensor_data"
-    sensorType := "humedad" // Solo nos interesa consumir los mensajes de Humedad
+	amqpServer := os.Getenv("AMQP_SERVER")
+	queueName := "sensor_data"
 
-    // Conectar a RabbitMQ
-    connRabbit, err := amqp.Dial(amqpServer)
-    if err != nil {
-        log.Fatalf("Error conectando a RabbitMQ: %v", err)
-    }
-    defer connRabbit.Close()
+	// Conectar a RabbitMQ
+	connRabbit, err := amqp.Dial(amqpServer)
+	if err != nil {
+		log.Fatalf("Error conectando a RabbitMQ: %v", err)
+	}
+	defer connRabbit.Close()
 
-    chRabbit, err := connRabbit.Channel()
-    if err != nil {
-        log.Fatalf("Error abriendo canal en RabbitMQ: %v", err)
-    }
-    defer chRabbit.Close()
+	chRabbit, err := connRabbit.Channel()
+	if err != nil {
+		log.Fatalf("Error abriendo canal en RabbitMQ: %v", err)
+	}
+	defer chRabbit.Close()
 
-    // Declarar Exchange de tipo "direct"
-    err = chRabbit.ExchangeDeclare(exchangeName, "direct", true, false, false, false, nil)
-    if err != nil {
-        log.Fatalf("Error declarando exchange: %v", err)
-    }
+	// Declarar la cola (debe coincidir con la cola declarada por el productor)
+	_, err = chRabbit.QueueDeclare(queueName, true, false, false, false, nil)
+	if err != nil {
+		log.Fatalf("Error declarando la cola: %v", err)
+	}
 
-    // Declarar la cola y enlazarla al exchange
-    q, err := chRabbit.QueueDeclare(sensorType, true, false, false, false, nil)
-    if err != nil {
-        log.Fatalf("Error declarando cola: %v", err)
-    }
+	// Consumir mensajes de la cola
+	msgs, err := chRabbit.Consume(
+		queueName, // Nombre de la cola
+		"",        // Consumer
+		true,      // Auto-acknowledge
+		false,     // Exclusivo
+		false,     // No esperar
+		false,     // No persistente
+		nil,       // Argumentos adicionales
+	)
+	if err != nil {
+		log.Fatalf("Error consumiendo cola: %v", err)
+	}
+	fmt.Println("Esperando mensajes...")
 
-    err = chRabbit.QueueBind(q.Name, sensorType, exchangeName, false, nil)
-    if err != nil {
-        log.Fatalf("Error enlazando la cola al exchange: %v", err)
-    }
+	for msg := range msgs {
+		var sensorData map[string]interface{}
+		if err := json.Unmarshal(msg.Body, &sensorData); err != nil {
+			log.Printf("Error al deserializar el mensaje: %v", err)
+			continue
+		}
 
-    // Consumir mensajes
-    msgs, err := chRabbit.Consume(
-        q.Name,
-        "",
-        true,
-        false,
-        false,
-        false,
-        nil,
-    )
-    if err != nil {
-        log.Fatalf("Error consumiendo cola: %v", err)
-    }
+		// Aquí procesas el mensaje según el tipo de sensor
+		sensorType, ok := sensorData["sensor"].(string)
+		if !ok {
+			log.Println("Mensaje inválido, no contiene tipo de sensor")
+			continue
+		}
+
+		// Imprimir o procesar el mensaje según el tipo de sensor
+		fmt.Printf("Mensaje recibido de tipo %s: %v\n", sensorType, sensorData)
+
 
     fmt.Printf("Esperando mensajes del sensor: %s\n", sensorType)
     for msg := range msgs {
@@ -115,4 +122,5 @@ func (c *AMQPConsumer) Consume() {
             log.Printf("Error procesando Humedad: %v", err)
         }
     }
+}
 }

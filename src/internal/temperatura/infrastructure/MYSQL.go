@@ -4,14 +4,15 @@ import (
 	"database/sql"
 	"esp32/src/internal/temperatura/domain"
 	"fmt"
+	amqpConsumer "esp32/src/internal/consumer_amqp"
 )
 
 type TemperatureRepo struct {
 	db           *sql.DB
-	amqpConsumer *AMQPConsumer 
+	amqpConsumer *amqpConsumer.RabbitMQConsumer
 }
 
-func NewTemperatureRepo(db *sql.DB, amqpConsumer *AMQPConsumer) *TemperatureRepo {
+func NewTemperatureRepo(db *sql.DB, amqpConsumer *amqpConsumer.RabbitMQConsumer) *TemperatureRepo {
 	return &TemperatureRepo{
 		db:           db,
 		amqpConsumer: amqpConsumer,

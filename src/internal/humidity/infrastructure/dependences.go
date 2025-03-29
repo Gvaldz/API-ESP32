@@ -5,29 +5,38 @@ import (
 	"esp32/src/core"
 	"esp32/src/internal/humidity/application"
 	"esp32/src/internal/humidity/infrastructure/controllers"
+	amqpConsumer "esp32/src/internal/consumer_amqp"
 )
 
-type HumidityDependeces struct {
+type HumidityDependencies struct {
 	DB   *sql.DB
 	AMQP *core.AMQPConnection
 }
 
-func NewHumidityDependeces(db *sql.DB, amqp *core.AMQPConnection) *HumidityDependeces {
-	return &HumidityDependeces{DB: db, AMQP: amqp}
+func NewHumidityDependencies(db *sql.DB, amqp *core.AMQPConnection) *HumidityDependencies {
+	return &HumidityDependencies{DB: db, AMQP: amqp}
 }
 
-func (d *HumidityDependeces) GetRoutes() *HumidityRoutes {
-	amqpConsumer := NewAMQPConsumer(d.AMQP, nil)
+func (d *HumidityDependencies) GetRoutes() *HumidityRoutes {
+	// Crear el repositorio de humedad
+	humidityRepo := NewHumidityRepo(d.DB, nil)
 
-	humidityRepo := NewHumidityRepo(d.DB, amqpConsumer)
+	// Crear los casos de uso de humedad
 	createHumidityUseCase := application.NewCreateHumidity(humidityRepo)
 	getByHamsterUseCase := application.NewGetByHamster(humidityRepo)
 
+	// Crear el controlador de humedad
 	createHumidityController := controllers.NewCreateHumidityController(createHumidityUseCase)
+
+	// Crear el consumidor AMQP y asociar el controlador de humedad
+	amqpConsumer := amqpConsumer.NewRabbitMQConsumer(d.AMQP, createHumidityController,nil, nil )
+	// Crear el controlador para obtener humedad por hámster
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	amqpConsumer.createHumC = createHumidityController
-	go amqpConsumer.Consume()
+	// Iniciar el consumidor AMQP en una goroutine
+	go amqpConsumer.Start()
 
+
+	// Devolver las rutas de humedad
 	return NewHumidityRoutes(createHumidityController, getByHamsterController)
 }

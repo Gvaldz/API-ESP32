@@ -27,7 +27,7 @@ func Init() {
 	motionDependences := motionDeps.NewMotionDependences(db, amqpConn)
 	motionRoutes := motionDependences.GetRoutes()
 
-	humidityDependences := humidityDeps.NewHumidityDependeces(db, amqpConn)
+	humidityDependences := humidityDeps.NewHumidityDependencies(db, amqpConn)
 	humidityRoutes := humidityDependences.GetRoutes()
 
 	server.Run(temperatureRoutes, motionRoutes, humidityRoutes)
