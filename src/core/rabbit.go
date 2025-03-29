@@ -2,6 +2,9 @@ package core
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -11,9 +14,13 @@ type AMQPConnection struct {
 	Channel    *amqp.Channel
 }
 
-// NewAMQPConnection constructor para crear una nueva conexión y canal AMQP.
 func NewAMQPConnection() (*AMQPConnection, error) {
-	conn, err := amqp.Dial("amqp://ale:ale05@54.156.170.232:5672/")
+	rabbitMQURL := os.Getenv("RABBITMQ_URL")
+    if rabbitMQURL == "" {
+        log.Fatal("La variable de entorno RABBITMQ_URL no está configurada")
+    }
+
+	conn, err := amqp.Dial(rabbitMQURL)
 	if err != nil {
 		return nil, fmt.Errorf("error conectando a RabbitMQ: %v", err)
 	}

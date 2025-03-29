@@ -1,48 +1,18 @@
-package cmd 
+package cmd
 
 import (
-	temperatureDeps "esp32/src/internal/temperatura/infrastructure"
-	motionDeps "esp32/src/internal/motion/infrastructure"
-	humidityDeps "esp32/src/internal/humidity/infrastructure"
-	amqpConsumer "esp32/src/internal/consumer_amqp"
-	"esp32/src/core"
-	"esp32/src/server"
+	"esp32/src/app"
 	"log"
 )
 
 func Init() {
-	// Conectar a la base de datos
-	db, err := core.ConnectDB()
+	app, err := app.NewApplication()
 	if err != nil {
-		log.Fatal("Error al conectar a la base de datos:", err)
+		log.Fatal("Error al inicializar la aplicación:", err)
 	}
+	defer app.Close()
 
-	// Conectar a RabbitMQ
-	amqpConn, err := core.NewAMQPConnection() 
-	if err != nil {
-		log.Fatal("Error al conectar a RabbitMQ:", err)
+	if err := app.Start(); err != nil {
+		log.Fatal("Error al iniciar la aplicación:", err)
 	}
-	defer amqpConn.Close()
-
-	// Crear dependencias de cada sensor
-	temperatureDependencies := temperatureDeps.NewTemperatureDependencies(db, amqpConn)
-	motionDependences := motionDeps.NewMotionDependencies(db, amqpConn)
-	humidityDependences := humidityDeps.NewHumidityDependencies(db, amqpConn)
-
-	// Obtener controladores de cada sensor
-	createHumidityController := humidityDependences.GetRoutes().CreateHumidityController
-	createTempController := temperatureDependencies.GetRoutes().CreateTemperatureController
-	createMovController := motionDependences.GetRoutes().CreateMotionController
-
-	// Verificar que no sean nil antes de iniciar RabbitMQ
-	if createHumidityController == nil || createTempController == nil || createMovController == nil {
-		log.Fatal("❌ Error: Uno o más controladores no se inicializaron correctamente.")
-	}
-
-	// Iniciar el consumidor AMQP
-	consumer := amqpConsumer.NewRabbitMQConsumer(amqpConn, createHumidityController, createTempController, createMovController)
-	go consumer.Start() // Se ejecuta en una goroutine para no bloquear
-
-	// Iniciar el servidor HTTP
-	server.Run(temperatureDependencies.GetRoutes(), motionDependences.GetRoutes(), humidityDependences.GetRoutes())
 }
