@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"esp32/src/internal/temperatura/domain"
 	"fmt"
-	amqpConsumer "esp32/src/internal/consumer_amqp"
+	amqpConsumer "esp32/src/consumer_amqp"
 )
 
 type TemperatureRepo struct {

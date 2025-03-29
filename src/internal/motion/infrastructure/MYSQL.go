@@ -3,15 +3,16 @@ package infrastructure
 import (
 	"database/sql"
 	"esp32/src/internal/motion/domain"
+	amqpConsumer "esp32/src/consumer_amqp"
 	"fmt"
 )
 
 type MotionRepo struct {
 	db           *sql.DB
-	amqpConsumer *AMQPConsumer 
+	amqpConsumer *amqpConsumer.RabbitMQConsumer
 }
 
-func NewMotionRepo(db *sql.DB, amqpConsumer *AMQPConsumer) *MotionRepo {
+func NewMotionRepo(db *sql.DB, amqpConsumer *amqpConsumer.RabbitMQConsumer) *MotionRepo {
 	return &MotionRepo{
 		db:           db,
 		amqpConsumer: amqpConsumer,

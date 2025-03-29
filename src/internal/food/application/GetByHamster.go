@@ -1,0 +1,16 @@
+package application
+
+import (
+	"esp32/src/internal/food/domain"
+)
+type GetByHamster struct {
+	repo domain.FoodRepository
+}
+
+func NewGetByHamster(repo domain.FoodRepository) *GetByHamster {
+	return &GetByHamster{repo: repo}
+}
+
+func (cp *GetByHamster) Execute(IDHamster int32) ([]domain.Food, error){
+	return cp.repo.GetByHamster(IDHamster)	
+}

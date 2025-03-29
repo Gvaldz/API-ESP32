@@ -3,10 +3,12 @@ package app
 import (
 	"database/sql"
 	"esp32/src/core"
-	consumer_amqp	"esp32/src/internal/consumer_amqp"
+	consumer_amqp	"esp32/src/consumer_amqp"
 	humidity 		"esp32/src/internal/humidity/infrastructure"
 	motion			"esp32/src/internal/motion/infrastructure"
-	temperatura		"esp32/src/internal/temperatura/infrastructure"
+	temperature		"esp32/src/internal/temperatura/infrastructure"
+	food			"esp32/src/internal/food/infrastructure"	
+
 	"esp32/src/server"
 )
 
@@ -28,14 +30,16 @@ func NewApplication() (*Application, error) {
 		return nil, err
 	}
 
-	tempDeps := temperatura.NewTemperatureDependencies(db, amqpConn)
+	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn)
 	motionDeps := motion.NewMotionDependencies(db, amqpConn)
 	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn)
+	foodDeps := food.NewFoodDependencies(db, amqpConn)
 
 	server := server.NewServer(
 		tempDeps.GetRoutes(),
 		motionDeps.GetRoutes(),
 		humidityDeps.GetRoutes(),
+		foodDeps.GetRoutes(),
 	)
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(
@@ -43,6 +47,7 @@ func NewApplication() (*Application, error) {
 		humidityDeps.GetRoutes().CreateHumidityController,
 		tempDeps.GetRoutes().CreateTemperatureController,
 		motionDeps.GetRoutes().CreateMotionController,
+		foodDeps.GetRoutes().CreateStatusFoodController,
 	)
 
 	return &Application{

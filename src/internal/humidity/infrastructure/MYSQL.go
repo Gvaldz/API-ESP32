@@ -3,7 +3,7 @@ package infrastructure
 import (
 	"database/sql"
 	"esp32/src/internal/humidity/domain"
-	amqpConsumer "esp32/src/internal/consumer_amqp"
+	amqpConsumer "esp32/src/consumer_amqp"
 	"fmt"
 )
 
