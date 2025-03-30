@@ -25,14 +25,18 @@ func (d *UserDependencies) GetRoutes() *UserRoutes {
 	userRepo := NewUsersRepo(d.DB)
 
 	createUserUseCase := application.NewCreateUser(userRepo, d.Hasher)
+	getAllUserUseCase := application.NewGetAllUsers(userRepo)
 	getUserUseCase := application.NewGetUserByID(userRepo)
 	updateUserUseCase := application.NewUpdateUser(userRepo)
 	updatePasswordUseCase := application.NewUpdatePassword(userRepo, d.Hasher)
+	deleteUserUseCase := application.NewDeleteUser(userRepo)
 
 	createUserController := controllers.NewCreateUserController(createUserUseCase)
+	getUsersController := controllers.NewGetAllUsersController(getAllUserUseCase)
 	getUserController := controllers.NewGetByUserIDController(getUserUseCase)
 	updateUserController := controllers.NewUpdateUserController(updateUserUseCase)
 	updatePasswordController := controllers.NewUpdatePasswordController(updatePasswordUseCase)
+	deleteUserController := controllers.NewDeleteUserController(deleteUserUseCase)
 
-	return NewUserRoutes(createUserController, getUserController, updateUserController, updatePasswordController)
+	return NewUserRoutes(createUserController,getUsersController, getUserController, updateUserController, updatePasswordController, deleteUserController)
 }

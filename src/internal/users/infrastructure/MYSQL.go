@@ -35,14 +35,31 @@ func (r *UsersRepo) CreateUser(user domain.User) (domain.User, error) {
     }, nil
 }
 
+func (r *UsersRepo) GetAllUsers() ([]domain.User, error) { 
+	query := "SELECT idusuarios, nombre, correo FROM usuarios"
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("error al obtener usuarios: %w", err)
+	}
+	defer rows.Close()
+
+	var users []domain.User
+	for rows.Next() {
+		var user domain.User
+		if err := rows.Scan(&user.IdUsuario, &user.Nombre, &user.Correo); err != nil {
+			return nil, fmt.Errorf("error al escanear user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func (r *UsersRepo) GetUserByID(iduser int32) (domain.User, error) {
 	var user domain.User
-	query := "SELECT id_usuario, nombre, correo FROM usuarios WHERE id_usuario = ?"
+	query := "SELECT idusuarios, nombre, correo FROM usuarios WHERE idusuarios = ?"
 	err := r.db.QueryRow(query, iduser).Scan(&user.IdUsuario, &user.Nombre, &user.Correo)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return user, fmt.Errorf("usuario no encontrado")
-		}
 		return user, fmt.Errorf("error al obtener usuario: %w", err)
 	}
 	return user, nil
@@ -50,7 +67,7 @@ func (r *UsersRepo) GetUserByID(iduser int32) (domain.User, error) {
 
 func (r *UsersRepo) GetUserByEmail(email string) (domain.User, error) {
 	var user domain.User
-	query := "SELECT id_usuario, nombre, correo, contrasena FROM usuarios WHERE correo = ?"
+	query := "SELECT idusuarios, nombre, correo, contrasena FROM usuarios WHERE correo = ?"
 	err := r.db.QueryRow(query, email).Scan(
 		&user.IdUsuario,
 		&user.Nombre,
@@ -67,7 +84,7 @@ func (r *UsersRepo) GetUserByEmail(email string) (domain.User, error) {
 }
 
 func (r *UsersRepo) UpdateUser(id int32, user domain.User) error {
-	query := "UPDATE usuarios SET nombre = ?, correo = ? WHERE id_usuario = ?"
+	query := "UPDATE usuarios SET nombre = ?, correo = ? WHERE idusuarios = ?"
 	result, err := r.db.Exec(query, user.Nombre, user.Correo, id)
 	if err != nil {
 		return fmt.Errorf("error al actualizar usuario: %w", err)
@@ -86,7 +103,7 @@ func (r *UsersRepo) UpdateUser(id int32, user domain.User) error {
 }
 
 func (r *UsersRepo) UpdatePassword(id int32, newHashedPassword string) error {
-	query := "UPDATE usuarios SET contrasena = ? WHERE id_usuario = ?"
+	query := "UPDATE usuarios SET contrasena = ? WHERE idusuarios = ?"
 	result, err := r.db.Exec(query, newHashedPassword, id)
 	if err != nil {
 		return fmt.Errorf("error al actualizar contraseña: %w", err)
@@ -105,7 +122,7 @@ func (r *UsersRepo) UpdatePassword(id int32, newHashedPassword string) error {
 }
 
 func (r *UsersRepo) DeleteUser(id int32) error {
-	query := "DELETE FROM usuarios WHERE id_usuario = ?"
+	query := "DELETE FROM usuarios WHERE idusuarios = ?"
 	result, err := r.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("error al eliminar usuario: %w", err)
