@@ -1,0 +1,35 @@
+package controllers
+
+import (
+    "net/http"
+    "esp32/src/internal/auth/application"
+    "esp32/src/internal/users/domain"
+    "github.com/gin-gonic/gin"
+)
+
+type LoginController struct {
+    loginUC *application.Login
+}
+
+func NewLoginController(loginUC *application.Login) *LoginController {
+    return &LoginController{loginUC: loginUC}
+}
+
+func (c *LoginController) Login(ctx *gin.Context) {
+    var credentials domain.User
+    if err := ctx.ShouldBindJSON(&credentials); err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{"error": "petición inválida"})
+        return
+    }
+
+    token, err := c.loginUC.Execute(credentials)
+    if err != nil {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{
+        "token":      token.Token,
+        "expires_at": token.ExpiresAt,
+    })
+}

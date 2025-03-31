@@ -1,0 +1,51 @@
+package application
+
+import (
+    auth "esp32/src/internal/auth/domain"
+    user "esp32/src/internal/users/domain"
+	"esp32/src/core"
+    "errors"
+)
+
+type Login struct {
+    authRepo     auth.AuthRepository
+    userRepo     user.UserRepository
+    tokenService auth.TokenService
+    hasher       core.PasswordHasher
+}
+
+func NewLogin(
+    authRepo auth.AuthRepository,
+    userRepo user.UserRepository,
+    tokenService auth.TokenService,
+    hasher core.PasswordHasher,
+) *Login {
+    return &Login{
+        authRepo:     authRepo,
+        userRepo:     userRepo,
+        tokenService: tokenService,
+        hasher:       hasher,
+    }
+}
+
+func (uc *Login) Execute(credentials user.User) (auth.Token, error) {
+    user, err := uc.authRepo.FindUserByEmail(credentials.Correo)
+    if err != nil {
+        return auth.Token{}, errors.New("Datos incorrectos")
+    }
+
+    if err := uc.hasher.Compare(user.Contrasena, credentials.Contrasena); err != nil {
+        return auth.Token{}, errors.New("Datos incorrectos")
+    }
+
+    token, err := uc.tokenService.GenerateToken(user.IdUsuario, user.Correo)
+    if err != nil {
+        return auth.Token{}, errors.New("failed to generate token")
+    }
+
+    go func() {
+        _ = uc.authRepo.UpdateLastLogin(user.IdUsuario)
+    }()
+
+    return token, nil
+}

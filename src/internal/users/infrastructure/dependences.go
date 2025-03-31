@@ -8,28 +8,30 @@ import (
 )
 
 type UserDependencies struct {
-	DB     *sql.DB
-	AMQP   *core.AMQPConnection
-	Hasher *core.BcryptHasher
+	DB       *sql.DB
+	AMQP     *core.AMQPConnection
+	Hasher   *core.BcryptHasher
+	UserRepo *UsersRepo
 }
 
 func NewUserDependencies(db *sql.DB, amqp *core.AMQPConnection, hasher *core.BcryptHasher) *UserDependencies {
+	userRepo := NewUsersRepo(db) 
+	
 	return &UserDependencies{
-		DB:     db,
-		AMQP:   amqp,
-		Hasher: hasher,
+		DB:       db,
+		AMQP:     amqp,
+		Hasher:   hasher,
+		UserRepo: userRepo, 
 	}
 }
 
 func (d *UserDependencies) GetRoutes() *UserRoutes {
-	userRepo := NewUsersRepo(d.DB)
-
-	createUserUseCase := application.NewCreateUser(userRepo, d.Hasher)
-	getAllUserUseCase := application.NewGetAllUsers(userRepo)
-	getUserUseCase := application.NewGetUserByID(userRepo)
-	updateUserUseCase := application.NewUpdateUser(userRepo)
-	updatePasswordUseCase := application.NewUpdatePassword(userRepo, d.Hasher)
-	deleteUserUseCase := application.NewDeleteUser(userRepo)
+	createUserUseCase := application.NewCreateUser(d.UserRepo, d.Hasher)
+	getAllUserUseCase := application.NewGetAllUsers(d.UserRepo)
+	getUserUseCase := application.NewGetUserByID(d.UserRepo)
+	updateUserUseCase := application.NewUpdateUser(d.UserRepo)
+	updatePasswordUseCase := application.NewUpdatePassword(d.UserRepo, d.Hasher)
+	deleteUserUseCase := application.NewDeleteUser(d.UserRepo)
 
 	createUserController := controllers.NewCreateUserController(createUserUseCase)
 	getUsersController := controllers.NewGetAllUsersController(getAllUserUseCase)
@@ -38,5 +40,12 @@ func (d *UserDependencies) GetRoutes() *UserRoutes {
 	updatePasswordController := controllers.NewUpdatePasswordController(updatePasswordUseCase)
 	deleteUserController := controllers.NewDeleteUserController(deleteUserUseCase)
 
-	return NewUserRoutes(createUserController,getUsersController, getUserController, updateUserController, updatePasswordController, deleteUserController)
+	return NewUserRoutes(
+		createUserController,
+		getUsersController, 
+		getUserController, 
+		updateUserController, 
+		updatePasswordController, 
+		deleteUserController,
+	)
 }
