@@ -31,16 +31,16 @@ func NewLogin(
 func (uc *Login) Execute(credentials user.User) (auth.Token, error) {
     user, err := uc.authRepo.FindUserByEmail(credentials.Correo)
     if err != nil {
-        return auth.Token{}, errors.New("Datos incorrectos")
+        return auth.Token{}, errors.New("datos incorrectos")
     }
 
     if err := uc.hasher.Compare(user.Contrasena, credentials.Contrasena); err != nil {
-        return auth.Token{}, errors.New("Datos incorrectos")
+        return auth.Token{}, errors.New("datos incorrectos")
     }
 
     token, err := uc.tokenService.GenerateToken(user.IdUsuario, user.Correo)
     if err != nil {
-        return auth.Token{}, errors.New("failed to generate token")
+        return auth.Token{}, errors.New("fallo en generar token")
     }
 
     go func() {
