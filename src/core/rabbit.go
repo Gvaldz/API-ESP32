@@ -15,7 +15,7 @@ type AMQPConnection struct {
 }
 
 func NewAMQPConnection() (*AMQPConnection, error) {
-	rabbitMQURL := os.Getenv("RABBITMQ_URL")
+	rabbitMQURL := os.Getenv("AMQP_SERVER")
     if rabbitMQURL == "" {
         log.Fatal("La variable de entorno RABBITMQ_URL no está configurada")
     }

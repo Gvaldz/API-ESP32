@@ -5,16 +5,20 @@ import (
 	motionRouters "esp32/src/internal/motion/infrastructure"
 	humidityRouters "esp32/src/internal/humidity/infrastructure"
 	foodRouters "esp32/src/internal/food/infrastructure"
+	websocketControllers "esp32/src/internal/websocket/infrastructure/controllers"
+	websocketInfra "esp32/src/internal/websocket/infrastructure"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	engine *gin.Engine
+	engine             *gin.Engine
 	temperatureRouters *temperatureRouters.TemperatureRoutes
-	motionRouters *motionRouters.MotionRoutes
-	humidityRouters *humidityRouters.HumidityRoutes
-	foodRouters *foodRouters.FoodRoutes
+	motionRouters      *motionRouters.MotionRoutes
+	humidityRouters    *humidityRouters.HumidityRoutes
+	foodRouters        *foodRouters.FoodRoutes
+	websocketServer    *websocketInfra.WebSocketServer
 }
 
 func NewServer(
@@ -32,12 +36,19 @@ func NewServer(
 		AllowCredentials: true,
 	}))
 
+	wsServer := websocketInfra.NewWebSocketServer()
+	wsController := websocketControllers.NewWebSocketController(wsServer)
+
+	// Ruta WebSocket
+	r.GET("/ws", wsController.ConnectWebSocket)
+
 	return &Server{
 		engine:            r,
 		temperatureRouters: tempRoutes,
 		motionRouters:      motionRoutes,
 		humidityRouters:    humidityRoutes,
-		foodRouters: 	  foodRoutes,
+		foodRouters:        foodRoutes,
+		websocketServer:    wsServer,
 	}
 }
 
@@ -46,5 +57,6 @@ func (s *Server) Run() error {
 	s.motionRouters.AttachRoutes(s.engine)
 	s.humidityRouters.AttachRoutes(s.engine)
 	s.foodRouters.AttachRoutes(s.engine)
+
 	return s.engine.Run(":8080")
 }
