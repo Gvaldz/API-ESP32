@@ -9,6 +9,7 @@ import (
 	temperature		"esp32/src/internal/temperatura/infrastructure"
 	food			"esp32/src/internal/food/infrastructure"	
 	users			"esp32/src/internal/users/infrastructure"
+	cages 			"esp32/src/internal/cages/infrastructure"
 
 	"esp32/src/server"
 )
@@ -39,6 +40,7 @@ func NewApplication() (*Application, error) {
 	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn)
 	foodDeps := food.NewFoodDependencies(db, amqpConn)
 	usersDeps := users.NewUserDependencies(db, amqpConn, hasher)
+	cageDeps := cages.NewCageDependencies(db)
 
 	server := server.NewServer(
 		tempDeps.GetRoutes(),
@@ -46,6 +48,7 @@ func NewApplication() (*Application, error) {
 		humidityDeps.GetRoutes(),
 		foodDeps.GetRoutes(),
 		usersDeps.GetRoutes(),
+		cageDeps.GetRoutes(),
 	)
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(

@@ -6,6 +6,7 @@ import (
 	humidityRouters 	"esp32/src/internal/humidity/infrastructure"
 	foodRouters 		"esp32/src/internal/food/infrastructure"
 	usersRouters		"esp32/src/internal/users/infrastructure"
+	cagesRouters		"esp32/src/internal/cages/infrastructure"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +18,7 @@ type Server struct {
 	humidityRouters 	 *humidityRouters.HumidityRoutes
 	foodRouters 		 *foodRouters.FoodRoutes
 	usersRouters 		 *usersRouters.UserRoutes
+	cagesRouters 		 *cagesRouters.CageRoutes
 }
 
 func NewServer(
@@ -24,7 +26,8 @@ func NewServer(
 	motionRoutes         *motionRouters.MotionRoutes,
 	humidityRoutes 		 *humidityRouters.HumidityRoutes,
 	foodRoutes 	  		 *foodRouters.FoodRoutes,
-	userRoutes			 *usersRouters.UserRoutes, 
+	userRoutes			 *usersRouters.UserRoutes,
+	cageRoutes 			 *cagesRouters.CageRoutes, 
 ) *Server {
 	r := gin.Default()
 
@@ -42,6 +45,7 @@ func NewServer(
 		humidityRouters:    humidityRoutes,
 		foodRouters: 	  	foodRoutes,
 		usersRouters: 		userRoutes,
+		cagesRouters: 		cageRoutes,	
 	}
 }
 
@@ -51,5 +55,6 @@ func (s *Server) Run() error {
 	s.humidityRouters.AttachRoutes(s.engine)
 	s.foodRouters.AttachRoutes(s.engine)
 	s.usersRouters.AttachRoutes(s.engine)
+	s.cagesRouters.AttachRoutes(s.engine)
 	return s.engine.Run(":8080")
 }
