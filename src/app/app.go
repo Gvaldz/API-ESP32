@@ -8,6 +8,7 @@ import (
 	motion			"esp32/src/internal/motion/infrastructure"
 	temperature		"esp32/src/internal/temperatura/infrastructure"
 	food			"esp32/src/internal/food/infrastructure"	
+	users			"esp32/src/internal/users/infrastructure"
 
 	"esp32/src/server"
 )
@@ -17,6 +18,7 @@ type Application struct {
 	AMQPConn      *core.AMQPConnection
 	Server        *server.Server
 	AMQPConsumer  *consumer_amqp.RabbitMQConsumer
+	Hasher		  *core.BcryptHasher
 }
 
 func NewApplication() (*Application, error) {
@@ -30,16 +32,20 @@ func NewApplication() (*Application, error) {
 		return nil, err
 	}
 
+	hasher := core.NewBcryptHasher(12)
+
 	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn)
 	motionDeps := motion.NewMotionDependencies(db, amqpConn)
 	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn)
 	foodDeps := food.NewFoodDependencies(db, amqpConn)
+	usersDeps := users.NewUserDependencies(db, amqpConn, hasher)
 
 	server := server.NewServer(
 		tempDeps.GetRoutes(),
 		motionDeps.GetRoutes(),
 		humidityDeps.GetRoutes(),
 		foodDeps.GetRoutes(),
+		usersDeps.GetRoutes(),
 	)
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(
@@ -55,6 +61,7 @@ func NewApplication() (*Application, error) {
 		AMQPConn:     amqpConn,
 		Server:       server,
 		AMQPConsumer: consumer,
+		Hasher: 	  hasher,	
 	}, nil
 }
 

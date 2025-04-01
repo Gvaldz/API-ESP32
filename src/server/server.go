@@ -5,9 +5,7 @@ import (
 	motionRouters "esp32/src/internal/motion/infrastructure"
 	humidityRouters "esp32/src/internal/humidity/infrastructure"
 	foodRouters "esp32/src/internal/food/infrastructure"
-	websocketControllers "esp32/src/internal/websocket/infrastructure/controllers"
-	websocketInfra "esp32/src/internal/websocket/infrastructure"
-
+usersRouters		"esp32/src/internal/users/infrastructure"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
@@ -18,14 +16,15 @@ type Server struct {
 	motionRouters      *motionRouters.MotionRoutes
 	humidityRouters    *humidityRouters.HumidityRoutes
 	foodRouters        *foodRouters.FoodRoutes
-	websocketServer    *websocketInfra.WebSocketServer
+	usersRouters 		 *usersRouters.UserRoutes
 }
 
 func NewServer(
-	tempRoutes *temperatureRouters.TemperatureRoutes,
-	motionRoutes *motionRouters.MotionRoutes,
-	humidityRoutes *humidityRouters.HumidityRoutes,
-	foodRoutes *foodRouters.FoodRoutes,
+	tempRoutes 			 *temperatureRouters.TemperatureRoutes,
+	motionRoutes         *motionRouters.MotionRoutes,
+	humidityRoutes 		 *humidityRouters.HumidityRoutes,
+	foodRoutes 	  		 *foodRouters.FoodRoutes,
+	userRoutes			 *usersRouters.UserRoutes, 
 ) *Server {
 	r := gin.Default()
 
@@ -36,11 +35,7 @@ func NewServer(
 		AllowCredentials: true,
 	}))
 
-	wsServer := websocketInfra.NewWebSocketServer()
-	wsController := websocketControllers.NewWebSocketController(wsServer)
 
-	// Ruta WebSocket
-	r.GET("/ws", wsController.ConnectWebSocket)
 
 	return &Server{
 		engine:            r,
@@ -48,7 +43,7 @@ func NewServer(
 		motionRouters:      motionRoutes,
 		humidityRouters:    humidityRoutes,
 		foodRouters:        foodRoutes,
-		websocketServer:    wsServer,
+		usersRouters: 		userRoutes,
 	}
 }
 
@@ -57,6 +52,6 @@ func (s *Server) Run() error {
 	s.motionRouters.AttachRoutes(s.engine)
 	s.humidityRouters.AttachRoutes(s.engine)
 	s.foodRouters.AttachRoutes(s.engine)
-
+	s.usersRouters.AttachRoutes(s.engine)
 	return s.engine.Run(":8080")
 }

@@ -17,17 +17,13 @@ func NewMotionDependencies(db *sql.DB, amqp *core.AMQPConnection) *MotionDepende
 }
 
 func (d *MotionDependencies) GetRoutes() *MotionRoutes {
-	// Crear el repositorio de movimiento
 	motionRepo := NewMotionRepo(d.DB, nil)
 
-	// Crear los casos de uso de movimiento
 	createMotionUseCase := application.NewCreateMotion(motionRepo)
 	getByHamsterUseCase := application.NewGetByHamster(motionRepo)
 
-	// Crear el controlador de movimiento
 	createMotionController := controllers.NewCreateMotionController(createMotionUseCase)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 
-	// Devolver las rutas de movimiento con el controlador necesario
 	return NewMotionRoutes(createMotionController, getByHamsterController)
 }
