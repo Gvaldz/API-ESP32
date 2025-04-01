@@ -21,13 +21,14 @@ func NewJWTService() *JWTService {
     return &JWTService{secretKey: key}
 }
 
-func (s *JWTService) GenerateToken(idusuario int32, correo string) (domain.Token, error) {
+func (s *JWTService) GenerateToken(userID int32, email string, userType string) (domain.Token, error) {
     expiresAt := time.Now().Add(24 * time.Hour).Unix()
-    
+
     claims := jwt.MapClaims{
-        "idusarrio": idusuario,
-        "correo":   correo,
-        "exp":     expiresAt,
+        "user_id":   userID,
+        "email":    email,
+        "user_type": userType, 
+        "exp":      expiresAt,
     }
     
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -42,7 +43,7 @@ func (s *JWTService) GenerateToken(idusuario int32, correo string) (domain.Token
     }, nil
 }
 
-func (s *JWTService) ValidateToken(tokenString string) (int32, error) {
+func (s *JWTService) ValidateToken(tokenString string) (int32, string, error) {
     token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
         if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
             return nil, errors.New("unexpected signing method")
@@ -51,13 +52,14 @@ func (s *JWTService) ValidateToken(tokenString string) (int32, error) {
     })
     
     if err != nil {
-        return 0, err
+        return 0, "", err
     }
-    
+
     if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-        idusuario := int32(claims["user_id"].(float64))
-        return idusuario, nil
+        userID := int32(claims["user_id"].(float64))
+        userType := claims["user_type"].(string)
+        return userID, userType, nil
     }
-    
-    return 0, errors.New("invalid token")
+
+    return 0, "", errors.New("invalid token")
 }

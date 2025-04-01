@@ -22,14 +22,16 @@ func (c *LoginController) Login(ctx *gin.Context) {
         return
     }
 
-    token, err := c.loginUC.Execute(credentials)
+    token, userType, err := c.loginUC.Execute(credentials)
     if err != nil {
         ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
         return
     }
-
+    
+    ctx.Header("Authorization", "Bearer "+token.Token)
     ctx.JSON(http.StatusOK, gin.H{
         "token":      token.Token,
         "expires_at": token.ExpiresAt,
+        "user_type":  userType, 
     })
 }

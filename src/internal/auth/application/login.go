@@ -28,24 +28,24 @@ func NewLogin(
     }
 }
 
-func (uc *Login) Execute(credentials user.User) (auth.Token, error) {
+func (uc *Login) Execute(credentials user.User) (auth.Token, string, error) {
     user, err := uc.authRepo.FindUserByEmail(credentials.Correo)
     if err != nil {
-        return auth.Token{}, errors.New("datos incorrectos")
+        return auth.Token{}, "", errors.New("datos incorrectos")
     }
 
     if err := uc.hasher.Compare(user.Contrasena, credentials.Contrasena); err != nil {
-        return auth.Token{}, errors.New("datos incorrectos")
+        return auth.Token{}, "", errors.New("datos incorrectos")
     }
 
-    token, err := uc.tokenService.GenerateToken(user.IdUsuario, user.Correo)
+    token, err := uc.tokenService.GenerateToken(user.IdUsuario, user.Correo, user.Tipo)
     if err != nil {
-        return auth.Token{}, errors.New("fallo en generar token")
+        return auth.Token{}, "", errors.New("fallo en generar token")
     }
 
     go func() {
         _ = uc.authRepo.UpdateLastLogin(user.IdUsuario)
     }()
 
-    return token, nil
+    return token, user.Tipo, nil
 }
