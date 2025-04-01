@@ -3,14 +3,16 @@ package app
 import (
 	"database/sql"
 	"esp32/src/core"
-	consumer_amqp	"esp32/src/consumer_amqp"
-	humidity 		"esp32/src/internal/humidity/infrastructure"
-	motion			"esp32/src/internal/motion/infrastructure"
-	temperature		"esp32/src/internal/temperatura/infrastructure"
-	food			"esp32/src/internal/food/infrastructure"	
-	users			"esp32/src/internal/users/infrastructure"
-
 	"esp32/src/server"
+	consumer_amqp 	"esp32/src/consumer_amqp"
+	login 			"esp32/src/internal/auth/infrastructure"
+	cages			"esp32/src/internal/cages/infrastructure"
+	food 			"esp32/src/internal/food/infrastructure"
+	humidity 		"esp32/src/internal/humidity/infrastructure"
+	motion 			"esp32/src/internal/motion/infrastructure"
+	temperature 	"esp32/src/internal/temperatura/infrastructure"
+	users 			"esp32/src/internal/users/infrastructure"
+
 )
 
 type Application struct {
@@ -40,7 +42,9 @@ func NewApplication() (*Application, error) {
 	motionDeps := motion.NewMotionDependencies(db, amqpConn)
 	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn)
 	foodDeps := food.NewFoodDependencies(db, amqpConn)
+	cageDeps := cages.NewCageDependencies(db)
 	usersDeps := users.NewUserDependencies(db, amqpConn, hasher)
+	loginDeps := login.NewAuthDependencies(db, hasher, usersDeps.UserRepo)
 
 	server := server.NewServer(
 		tempDeps.GetRoutes(),
@@ -48,6 +52,8 @@ func NewApplication() (*Application, error) {
 		humidityDeps.GetRoutes(),
 		foodDeps.GetRoutes(),
 		usersDeps.GetRoutes(),
+		cageDeps.GetRoutes(),
+		loginDeps.GetRoutes(),
 	)
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(
