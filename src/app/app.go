@@ -28,6 +28,8 @@ func NewApplication() (*Application, error) {
 	}
 
 	amqpConn, err := core.NewAMQPConnection()
+
+	
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +56,7 @@ func NewApplication() (*Application, error) {
 		tempDeps.GetRoutes().CreateTemperatureController,
 		motionDeps.GetRoutes().CreateMotionController,
 		foodDeps.GetRoutes().CreateStatusFoodController,
+		nil, // Replace with an actual FCMClient instance if needed
 	)
 
 	return &Application{
