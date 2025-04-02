@@ -3,6 +3,7 @@ package controllers
 import (
 	"esp32/src/internal/cages/application"
 	"esp32/src/internal/cages/domain"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -31,4 +32,9 @@ func (h *CreateCageController) Create(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"message": "jaula creada correctamente", "cage": cageRequest})
+}
+
+func (h *CreateCageController) ProcessCage(cage domain.Cage) error {
+	fmt.Printf("Procesando creación de jaula: %+v\n", cage)
+	return h.createCage.Execute(cage)
 }

@@ -15,6 +15,8 @@ import (
 	controllersMotion 		 "esp32/src/internal/motion/infrastructure/controllers"
 	dependencesFood			 "esp32/src/internal/food/domain"
 	controllersFood			 "esp32/src/internal/food/infrastructure/controllers"
+	dependencesCage			 "esp32/src/internal/cages/domain"
+	controllersCage			 "esp32/src/internal/cages/infrastructure/controllers"
 	amqp 					 "github.com/rabbitmq/amqp091-go"
 )
 
@@ -24,9 +26,10 @@ type RabbitMQConsumer struct {
 	CreateTemp *controllersTemperature.CreateTemperatureController
 	CreateMov  *controllersMotion.CreateMotionController
 	CreateFood *controllersFood.CreateStatusFoodController
+	CreateCage *controllersCage.CreateCageController
 }
 
-func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersHumidity.CreateHumidityController, createTemp *controllersTemperature.CreateTemperatureController, createMov *controllersMotion.CreateMotionController, createFood *controllersFood.CreateStatusFoodController) *RabbitMQConsumer {
+func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersHumidity.CreateHumidityController, createTemp *controllersTemperature.CreateTemperatureController, createMov *controllersMotion.CreateMotionController, createFood *controllersFood.CreateStatusFoodController, createCage *controllersCage.CreateCageController) *RabbitMQConsumer {
 	
 
 	return &RabbitMQConsumer{
@@ -35,6 +38,7 @@ func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersH
 		CreateTemp: createTemp,
 		CreateMov: createMov,
 		CreateFood: createFood,
+		CreateCage: createCage,
 	}
 	
 }
@@ -82,7 +86,8 @@ func (c *RabbitMQConsumer) Start() {
 			Temperatura float64 `json:"temperatura,omitempty"`
 			Movimiento  int   	`json:"movimiento,omitempty"`
 			Alimento    int   	`json:"alimento,omitempty"`
-			Porcentaje  float32   	`json:"porcentaje,omitempty"`
+			IdJaula		int     `json:"idjaula"`
+			Porcentaje  float32 `json:"porcentaje,omitempty"`
 			Token       string  `json:"token"` 
 		}
 
@@ -143,6 +148,19 @@ func (c *RabbitMQConsumer) Start() {
 				}
 			} else {
 				log.Println("El controlador de humedad es nil, no se puede procesar.")
+			}
+		case "jaula":
+			if sensorData.IdJaula == 0 {
+				log.Println("Advertencia: ID no valido.")
+				continue
+			}
+	
+			jaula := dependencesCage.Cage{
+				Idjaula: int32(sensorData.IdJaula),
+			}
+	
+			if err := c.CreateCage.ProcessCage(jaula); err != nil {
+				log.Printf("Error al procesar jaula: %v", err)
 			}
 		case "movimiento":
 			if sensorData.IDHamster == 0 {

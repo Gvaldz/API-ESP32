@@ -70,6 +70,7 @@ func NewApplication() (*Application, error) {
 		tempDeps.GetRoutes().CreateTemperatureController,
 		motionDeps.GetRoutes().CreateMotionController,
 		foodDeps.GetRoutes().CreateStatusFoodController,
+		cageDeps.GetRoutes().CreateCageController,
 	)
 
 	return &Application{
