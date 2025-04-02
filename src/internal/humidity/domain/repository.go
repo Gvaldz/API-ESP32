@@ -1,6 +1,6 @@
 package domain
 
 type HumidityRepository interface {
-    GetByHamster(IDHamster int32) ([]Humidity, error)
+    GetByHamster(IDHamster string) ([]Humidity, error)
 	CreateHumidity(Humidity) error
 }

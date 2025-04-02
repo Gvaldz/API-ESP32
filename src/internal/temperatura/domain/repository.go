@@ -1,6 +1,6 @@
 package domain
 
 type TemperatureRepository interface {
-    GetByHamster(IDHamster int32) ([]Temperature, error)
+    GetByHamster(IDHamster string) ([]Temperature, error)
 	CreateTemperature(Temperature) error
 }

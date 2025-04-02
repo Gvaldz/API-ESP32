@@ -3,7 +3,6 @@ package controllers
 import (
 	"esp32/src/internal/food/application"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,8 +17,7 @@ func NewGetByHamsterController(getByHamster *application.GetByHamster) *GetByHam
 
 func (h *GetByHamsterController) GetByHamster(c *gin.Context) {
 	idHamster := c.Param("idHamster")
-	idInt, err := strconv.Atoi(idHamster)
-	food, err := h.getByHamster.Execute(int32(idInt))
+	food, err := h.getByHamster.Execute(string(idHamster))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return

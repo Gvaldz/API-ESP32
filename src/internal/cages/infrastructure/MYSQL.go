@@ -46,7 +46,7 @@ func (r *CageRepo) GetAllCages() ([]domain.Cage, error) {
 	return cages, nil
 }
 
-func (r *CageRepo) GetCageByID(idjaula int32) (domain.Cage, error) {
+func (r *CageRepo) GetCageByID(idjaula string) (domain.Cage, error) {
 	var cage domain.Cage
 	query := "SELECT idjaulas, idusuarios, nombre_hamster FROM jaulas WHERE idjaulas = ?"
 	err := r.db.QueryRow(query, idjaula).Scan(&cage.Idjaula, &cage.Idusuario, &cage.Nombre_hamster)
@@ -76,7 +76,7 @@ func (r *CageRepo) GetCagesByUser(Idusuario int32) ([]domain.Cage, error) {
 	return cages, nil
 }
 
-func (r *CageRepo) UpdateCage(id int32, cage domain.Cage) error {
+func (r *CageRepo) UpdateCage(id string, cage domain.Cage) error {
 	query := "UPDATE jaulas SET idusuarios = ?, nombre_hamster = ? WHERE idjaulas = ?"
 	result, err := r.db.Exec(query, cage.Idusuario, cage.Nombre_hamster, id)
 	if err != nil {

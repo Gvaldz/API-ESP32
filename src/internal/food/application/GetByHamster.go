@@ -11,6 +11,6 @@ func NewGetByHamster(repo domain.FoodRepository) *GetByHamster {
 	return &GetByHamster{repo: repo}
 }
 
-func (cp *GetByHamster) Execute(IDHamster int32) ([]domain.Food, error){
+func (cp *GetByHamster) Execute(IDHamster string) ([]domain.Food, error){
 	return cp.repo.GetByHamster(IDHamster)	
 }

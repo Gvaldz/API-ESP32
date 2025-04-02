@@ -29,7 +29,7 @@ func (r *FoodRepo) CreateStatusFood(food domain.Food) error {
 	return nil
 }
 
-func (r *FoodRepo) GetByHamster(IDHamster int32) ([]domain.Food, error) {
+func (r *FoodRepo) GetByHamster(IDHamster string) ([]domain.Food, error) {
 	query := "SELECT idalimento, idhamster, alimento, porcentaje, hora_registro FROM alimento WHERE idhamster = ?"
 	rows, err := r.db.Query(query, IDHamster)
 	if err != nil {

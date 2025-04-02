@@ -11,6 +11,6 @@ func NewGetByHamster(repo domain.HumidityRepository) *GetByHamster {
 	return &GetByHamster{repo: repo}
 }
 
-func (cp *GetByHamster) Execute(IDHamster int32) ([]domain.Humidity, error){
+func (cp *GetByHamster) Execute(IDHamster string) ([]domain.Humidity, error){
 	return cp.repo.GetByHamster(IDHamster)	
 }

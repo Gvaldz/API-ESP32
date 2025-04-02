@@ -3,7 +3,6 @@ package controllers
 import (
 	"esp32/src/internal/cages/application"
 	"esp32/src/internal/cages/domain"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,13 +27,7 @@ func (c *UpdateCageController) UpdateUser(ctx *gin.Context) {
 		return
 	}
 	
-	var idInt int32
-	if _, err := fmt.Sscanf(id, "%d", &idInt); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "ID inválido"})
-		return
-	}
-	
-	if err := c.updateCageController.Execute(idInt, user); err != nil {
+	if err := c.updateCageController.Execute(id, user); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

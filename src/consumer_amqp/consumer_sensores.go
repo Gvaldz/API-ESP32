@@ -47,10 +47,8 @@ func (c *RabbitMQConsumer) Start() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Error cargando .env: %v", err)
 	}
-	log.Println("Variables de entorno cargadas correctamente.")
 
 	amqpServer := os.Getenv("AMQP_SERVER")
-	log.Printf("Conectando a RabbitMQ en: %s\n", amqpServer)
 
 	connRabbit, err := amqp.Dial(amqpServer)
 	if err != nil {
@@ -63,14 +61,12 @@ func (c *RabbitMQConsumer) Start() {
 	if err != nil {
 		log.Fatalf("Error abriendo canal en RabbitMQ: %v", err)
 	}
-	log.Println("Canal RabbitMQ abierto.")
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare("sensores", true, false, false, false, nil)
 	if err != nil {
 		log.Fatalf("Error declarando cola: %v", err)
 	}
-	log.Println("Cola 'sensores' declarada.")
 
 	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
 	if err != nil {
@@ -81,12 +77,11 @@ func (c *RabbitMQConsumer) Start() {
 	for msg := range msgs {
 		var sensorData struct {
 			Sensor      string  `json:"sensor"`
-			IDHamster   int     `json:"idhamster"`
+			IDHamster   string     `json:"idhamster"`
 			Humedad     float64 `json:"humedad,omitempty"`
 			Temperatura float64 `json:"temperatura,omitempty"`
 			Movimiento  int   	`json:"movimiento,omitempty"`
 			Alimento    int   	`json:"alimento,omitempty"`
-			IdJaula		int     `json:"idjaula"`
 			Porcentaje  float32 `json:"porcentaje,omitempty"`
 			Token       string  `json:"token"` 
 		}
@@ -96,18 +91,35 @@ func (c *RabbitMQConsumer) Start() {
 			continue
 		}
 
-		log.Printf("Mensaje recibido: Sensor: %s, IDHamster: %d\n", sensorData.Sensor, sensorData.IDHamster)
+		log.Printf("Mensaje recibido: Sensor: %s, IDHamster: %s\n", sensorData.Sensor, sensorData.IDHamster)
+
+
+		if sensorData.Sensor == ""{
+
+			if sensorData.IDHamster == "" {
+				log.Println("Advertencia: ID no valido.")
+				continue
+			}
+	
+			jaula := dependencesCage.Cage{
+				Idjaula: string(sensorData.IDHamster),
+			}
+	
+			if err := c.CreateCage.ProcessCage(jaula); err != nil {
+				log.Printf("Error al procesar jaula: %v", err)}
+		}
+
 
 		switch sensorData.Sensor {
 		case "temperatura":
 			if sensorData.Temperatura == 0 {
-				log.Printf("Temperatura no válida para el hámster ID: %d\n", sensorData.IDHamster)
+				log.Printf("Temperatura no válida para el hámster ID: %s\n", sensorData.IDHamster)
 				continue
 			}
 			log.Printf("Procesando temperatura: %v", sensorData.Temperatura)
 		
 			temperature := dependencesTemperature.Temperature{
-				IDHamster:   int32(sensorData.IDHamster),
+				IDHamster:   string(sensorData.IDHamster),
 				Temperatura: sensorData.Temperatura,
 			}
 		
@@ -127,13 +139,13 @@ func (c *RabbitMQConsumer) Start() {
 		
 		case "humedad":
 			if sensorData.Humedad == 0 {
-				log.Printf("Humedad no válida para el hámster ID: %d\n", sensorData.IDHamster)
+				log.Printf("Humedad no válida para el hámster ID: %s\n", sensorData.IDHamster)
 				continue
 			}
 			log.Printf("Procesando humedad: %v", sensorData.Humedad)
 
 			humidity := depenencesHumidity.Humidity{
-				IDHamster: int32(sensorData.IDHamster),
+				IDHamster: string(sensorData.IDHamster),
 				Humedad:   sensorData.Humedad,
 			}
 
@@ -149,21 +161,8 @@ func (c *RabbitMQConsumer) Start() {
 			} else {
 				log.Println("El controlador de humedad es nil, no se puede procesar.")
 			}
-		case "jaula":
-			if sensorData.IdJaula == 0 {
-				log.Println("Advertencia: ID no valido.")
-				continue
-			}
-	
-			jaula := dependencesCage.Cage{
-				Idjaula: int32(sensorData.IdJaula),
-			}
-	
-			if err := c.CreateCage.ProcessCage(jaula); err != nil {
-				log.Printf("Error al procesar jaula: %v", err)
-			}
 		case "movimiento":
-			if sensorData.IDHamster == 0 {
+			if sensorData.IDHamster == "" {
 				log.Println("Advertencia: Datos no válidos o mensaje incorrecto.")
 				continue
 			}
@@ -172,7 +171,7 @@ func (c *RabbitMQConsumer) Start() {
 			fmt.Printf("Mensaje de Movimiento recibido: %+v\n", sensorData)
 	
 			motion := dependencesMotion.Motion{
-				IDHamster:  int32(sensorData.IDHamster),
+				IDHamster:  string(sensorData.IDHamster),
 				Movimiento: mov,  
 			}
 	
@@ -181,12 +180,12 @@ func (c *RabbitMQConsumer) Start() {
 			}
 		case "alimento":
 			if sensorData.Porcentaje == 0 {
-				log.Printf("Porcentaje de alimento no válido para el hámster ID: %d\n", sensorData.IDHamster)
+				log.Printf("Porcentaje de alimento no válido para el hámster ID: %s\n", sensorData.IDHamster)
 				continue
 			}
 		
 			food := dependencesFood.Food{
-				IDHamster:  int32(sensorData.IDHamster),
+				IDHamster:  string(sensorData.IDHamster),
 				Alimento:   sensorData.Alimento,
 				Porcentaje: sensorData.Porcentaje,
 			}

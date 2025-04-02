@@ -29,7 +29,7 @@ func (r *MotionRepo) CreateMotion(motion domain.Motion) error {
 	return nil
 }
 
-func (r *MotionRepo) GetByHamster(IDHamster int32) ([]domain.Motion, error) {
+func (r *MotionRepo) GetByHamster(IDHamster string) ([]domain.Motion, error) {
 	query := "SELECT idmovimiento, idhamster, movimiento, hora_registro FROM movimiento WHERE idhamster = ?"
 	rows, err := r.db.Query(query, IDHamster)
 	if err != nil {

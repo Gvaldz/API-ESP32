@@ -29,7 +29,7 @@ func (r *TemperatureRepo) CreateTemperature(temperature domain.Temperature) erro
 	return nil
 }
 
-func (r *TemperatureRepo) GetByHamster(IDHamster int32) ([]domain.Temperature, error) {
+func (r *TemperatureRepo) GetByHamster(IDHamster string) ([]domain.Temperature, error) {
 	query := "SELECT idtemperatura, idhamster, temperatura, hora_registro FROM temperatura WHERE idhamster = ?"
 	rows, err := r.db.Query(query, IDHamster)
 	if err != nil {

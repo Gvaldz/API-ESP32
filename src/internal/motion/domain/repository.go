@@ -1,6 +1,6 @@
 package domain
 
 type MotionRepository interface {
-    GetByHamster(IDHamster int32) ([]Motion, error)
+    GetByHamster(IDHamster string) ([]Motion, error)
 	CreateMotion(Motion) error
 }

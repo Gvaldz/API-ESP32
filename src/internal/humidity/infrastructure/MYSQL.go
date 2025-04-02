@@ -29,7 +29,7 @@ func (r *HumidityRepo) CreateHumidity(humidity domain.Humidity) error {
 	return nil
 }
 
-func (r *HumidityRepo) GetByHamster(IDHamster int32) ([]domain.Humidity, error) {
+func (r *HumidityRepo) GetByHamster(IDHamster string) ([]domain.Humidity, error) {
 	query := "SELECT idhumedad, idhamster, humedad, hora_registro FROM humedad WHERE idhamster = ?"
 	rows, err := r.db.Query(query, IDHamster)
 	if err != nil {

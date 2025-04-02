@@ -12,6 +12,6 @@ func NewGetCageByID(repo domain.CageRepository) *GetCageByID {
 	return &GetCageByID{repo: repo}
 }
 
-func (cp *GetCageByID) Execute(IDRaza int32) (domain.Cage, error){
+func (cp *GetCageByID) Execute(IDRaza string) (domain.Cage, error){
 	return cp.repo.GetCageByID(IDRaza)	
 }	

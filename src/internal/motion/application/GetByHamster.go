@@ -11,6 +11,6 @@ func NewGetByHamster(repo domain.MotionRepository) *GetByHamster {
 	return &GetByHamster{repo: repo}
 }
 
-func (cp *GetByHamster) Execute(IDHamster int32) ([]domain.Motion, error){
+func (cp *GetByHamster) Execute(IDHamster string) ([]domain.Motion, error){
 	return cp.repo.GetByHamster(IDHamster)	
 }
