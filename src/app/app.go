@@ -3,16 +3,18 @@ package app
 import (
 	"database/sql"
 	"esp32/src/core"
+	consumer_amqp "esp32/src/consumer_amqp"
+	login "esp32/src/internal/auth/infrastructure"
+	cages "esp32/src/internal/cages/infrastructure"
+	food "esp32/src/internal/food/infrastructure"
+	humidity "esp32/src/internal/humidity/infrastructure"
+	motion "esp32/src/internal/motion/infrastructure"
+	temperature "esp32/src/internal/temperatura/infrastructure"
+	users "esp32/src/internal/users/infrastructure"
+	websocketapp "esp32/src/internal/websocket/application"
+	websocketinfra "esp32/src/internal/websocket/infrastructure"
+	websocketc "esp32/src/internal/websocket/infrastructure/controllers"
 	"esp32/src/server"
-	consumer_amqp 	"esp32/src/consumer_amqp"
-	login 			"esp32/src/internal/auth/infrastructure"
-	cages			"esp32/src/internal/cages/infrastructure"
-	food 			"esp32/src/internal/food/infrastructure"
-	humidity 		"esp32/src/internal/humidity/infrastructure"
-	motion 			"esp32/src/internal/motion/infrastructure"
-	temperature 	"esp32/src/internal/temperatura/infrastructure"
-	users 			"esp32/src/internal/users/infrastructure"
-
 )
 
 type Application struct {
@@ -21,6 +23,7 @@ type Application struct {
 	Server        *server.Server
 	AMQPConsumer  *consumer_amqp.RabbitMQConsumer
 	Hasher		  *core.BcryptHasher
+	tokenService  *core.JWTService
 }
 
 func NewApplication() (*Application, error) {
@@ -37,11 +40,15 @@ func NewApplication() (*Application, error) {
 	}
 
 	hasher := core.NewBcryptHasher(12)
+	wsService := websocketapp.NewWebSocketService()
+	tokenService := core.NewJWTService()
 
-	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn)
-	motionDeps := motion.NewMotionDependencies(db, amqpConn)
-	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn)
-	foodDeps := food.NewFoodDependencies(db, amqpConn)
+	wsHandler := websocketc.NewWebSocketController(wsService, *tokenService)
+	wsRoutes := websocketinfra.NewWebSocketRoutes(wsHandler)
+	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn, wsService)
+	motionDeps := motion.NewMotionDependencies(db, amqpConn, wsService)
+	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn, wsService)
+	foodDeps := food.NewFoodDependencies(db, amqpConn, wsService)
 	cageDeps := cages.NewCageDependencies(db)
 	usersDeps := users.NewUserDependencies(db, amqpConn, hasher)
 	loginDeps := login.NewAuthDependencies(db, hasher, usersDeps.UserRepo)
@@ -54,6 +61,7 @@ func NewApplication() (*Application, error) {
 		usersDeps.GetRoutes(),
 		cageDeps.GetRoutes(),
 		loginDeps.GetRoutes(),
+		wsRoutes,
 	)
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(

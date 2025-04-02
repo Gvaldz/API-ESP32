@@ -1,30 +1,62 @@
 package application
 
 import (
+	"log"
+	"net/http"
+	"sync"
 	"esp32/src/internal/websocket/domain"
-	"fmt"
+	"github.com/gorilla/websocket"
 )
 
-// WebSocketNotifier gestiona las notificaciones WebSocket
-type WebSocketNotifier struct {
-	wsService domain.WebSocketService
+type WebSocketService struct {
+	upgrader   websocket.Upgrader
+	clients    map[int32]*domain.Session
+	clientsMu  sync.RWMutex
 }
 
-// NewWebSocketNotifier crea un nuevo servicio de notificación
-func NewWebSocketNotifier(wsService domain.WebSocketService) *WebSocketNotifier {
-	return &WebSocketNotifier{wsService: wsService}
+func NewWebSocketService() *WebSocketService {
+	return &WebSocketService{
+		upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+		clients: make(map[int32]*domain.Session),
+	}
 }
 
-// NotifyAll envía una alerta a todos los clientes WebSocket conectados
-func (n *WebSocketNotifier) NotifyAll(sensor string, value float64, timestamp string) {
-	message := fmt.Sprintf("⚠️ Advertencia: %s fuera de rango: %.2f", sensor, value)
-
-	wsMessage := domain.WebSocketMessage{
-		Sensor:    sensor,
-		Message:   message,
-		Value:     value,
-		Timestamp: timestamp,
+func (ws *WebSocketService) HandleConnection(w http.ResponseWriter, r *http.Request, userID int32, role string) error {
+	conn, err := ws.upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return err
 	}
 
-	n.wsService.BroadcastMessage(wsMessage)
+	session := domain.NewSession(conn, userID, role)
+
+	ws.clientsMu.Lock()
+	ws.clients[userID] = session
+	ws.clientsMu.Unlock()
+
+	session.SetCloseHandler(ws.removeClient)
+	go session.StartHandling()
+
+	return nil
+}
+
+func (ws *WebSocketService) removeClient(userID int32) {
+	ws.clientsMu.Lock()
+	defer ws.clientsMu.Unlock()
+
+	delete(ws.clients, userID)
+	log.Printf("Client disconnected: UserID %d", userID)
+}
+
+func (ws *WebSocketService) NotifyUser(userID int32, data interface{}) error {
+	ws.clientsMu.RLock()
+	defer ws.clientsMu.RUnlock()
+
+	if client, ok := ws.clients[userID]; ok {
+		return client.SendUpdate(data)
+	}
+	return nil
 }
