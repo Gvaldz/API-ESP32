@@ -186,23 +186,22 @@ func (c *RabbitMQConsumer) Start() {
 				log.Printf("Error al procesar el movimiento: %v", err)
 			}
 		case "alimento":
-			if sensorData.IDHamster == 0 {
-				log.Println("Advertencia: Datos no válidos o mensaje incorrecto.")
+			if sensorData.Porcentaje == 0 {
+				log.Printf("Porcentaje de alimento no válido para el hámster ID: %d\n", sensorData.IDHamster)
 				continue
 			}
-	
-			fd := sensorData.Alimento == 1 
-			fmt.Printf("Mensaje de alimento recibido: %+v\n", sensorData)
-	
+		
 			food := dependencesFood.Food{
-				IDHamster: int32(sensorData.IDHamster),
-				Alimento:  fd,
+				IDHamster:  int32(sensorData.IDHamster),
+				Alimento:   sensorData.Alimento,
 				Porcentaje: sensorData.Porcentaje,
 			}
-	
-			if err := c.CreateFood.ProcessFood(food); err != nil {
-				log.Printf("Error al procesar estatus de alimento: %v", err)
+		
+			err := c.CreateFood.ProcessFood(food)
+			if err != nil {
+				log.Printf("Error procesando estado de alimento: %v", err)
 			}
+		
 		}
 }
 }
