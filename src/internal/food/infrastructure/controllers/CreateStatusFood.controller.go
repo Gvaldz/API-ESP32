@@ -50,7 +50,7 @@ func (h *CreateStatusFoodController) Create(c *gin.Context) {
 }
 
 func (h *CreateStatusFoodController) ProcessFood(food domain.Food) error {
-    fmt.Printf("Procesando temperatura desde AMQP: %+v\n", food)
+    fmt.Printf("Procesando estatus de alimento desde AMQP: %+v\n", food)
     
     if err := h.createStatusFood.Execute(food); err != nil {
         return err

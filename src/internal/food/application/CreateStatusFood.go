@@ -14,6 +14,6 @@ func NewCreateStatusFood(repo domain.FoodRepository) *CreateStatusFood {
 }
 
 func (c *CreateStatusFood) Execute(food domain.Food) error {
-	fmt.Printf("Guardando temperatura en la base de datos: %+v\n", food)
+	fmt.Printf("Guardando estatus de alimento en la base de datos: %+v\n", food)
 	return c.repo.CreateStatusFood(food)
 }
