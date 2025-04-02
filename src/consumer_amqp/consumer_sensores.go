@@ -15,20 +15,18 @@ import (
 	controllersMotion 		 "esp32/src/internal/motion/infrastructure/controllers"
 	dependencesFood			 "esp32/src/internal/food/domain"
 	controllersFood			 "esp32/src/internal/food/infrastructure/controllers"
-	fcm 					 "esp32/src/core"
 	amqp 					 "github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQConsumer struct {
 	conn       *core.AMQPConnection
-	FCMClient  *fcm.FCMClient
 	CreateHumidity *controllersHumidity.CreateHumidityController
 	CreateTemp *controllersTemperature.CreateTemperatureController
 	CreateMov  *controllersMotion.CreateMotionController
 	CreateFood *controllersFood.CreateStatusFoodController
 }
 
-func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersHumidity.CreateHumidityController, createTemp *controllersTemperature.CreateTemperatureController, createMov *controllersMotion.CreateMotionController, createFood *controllersFood.CreateStatusFoodController,fcmClient *fcm.FCMClient) *RabbitMQConsumer {
+func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersHumidity.CreateHumidityController, createTemp *controllersTemperature.CreateTemperatureController, createMov *controllersMotion.CreateMotionController, createFood *controllersFood.CreateStatusFoodController) *RabbitMQConsumer {
 	
 
 	return &RabbitMQConsumer{
@@ -37,7 +35,6 @@ func NewRabbitMQConsumer(conn *core.AMQPConnection, CreateHumidity *controllersH
 		CreateTemp: createTemp,
 		CreateMov: createMov,
 		CreateFood: createFood,
-		FCMClient:  fcmClient,
 	}
 	
 }
@@ -118,27 +115,6 @@ func (c *RabbitMQConsumer) Start() {
 				} else {
 					log.Println("Temperatura procesada exitosamente.")
 		
-					// 🔥 Inicializar cliente FCM una vez
-					fcmClient, err := core.NewFCMClient()
-					if err != nil {
-						log.Printf("Error inicializando cliente FCM: %v", err)
-						break
-					}
-		
-					// 🛑 Comprobar si la temperatura está fuera del rango normal
-					if sensorData.Temperatura < 18 || sensorData.Temperatura > 30 {
-						// 📨 Enviar notificación
-						token := "TOKEN_DEL_DISPOSITIVO" // ⚠️ Reemplazar con el token real del dispositivo
-						title := "⚠️ Alerta de Temperatura"
-						body := fmt.Sprintf("La temperatura del hábitat del hámster es anormal: %.2f°C", sensorData.Temperatura)
-		
-						err := fcmClient.SendNotification(token, title, body)
-						if err != nil {
-							log.Printf("Error enviando notificación FCM: %v", err)
-						} else {
-							log.Println("✅ Notificación FCM enviada con éxito.")
-						}
-					}
 				}
 			} else {
 				log.Println("El controlador de temperatura es nil, no se puede procesar.")

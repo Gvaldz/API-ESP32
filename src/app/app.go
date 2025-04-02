@@ -70,7 +70,6 @@ func NewApplication() (*Application, error) {
 		tempDeps.GetRoutes().CreateTemperatureController,
 		motionDeps.GetRoutes().CreateMotionController,
 		foodDeps.GetRoutes().CreateStatusFoodController,
-		nil, // Replace with an actual FCMClient instance if needed
 	)
 
 	return &Application{
