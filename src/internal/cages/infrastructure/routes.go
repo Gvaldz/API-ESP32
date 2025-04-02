@@ -1,8 +1,8 @@
 package infrastructure
 
 import (
-    "esp32/src/server/middleware"
     "esp32/src/internal/cages/infrastructure/controllers"
+    "esp32/src/server/middleware"
     "github.com/gin-gonic/gin"
 	authRepo     "esp32/src/internal/auth/infrastructure"
     tokenService "esp32/src/internal/auth/domain"
@@ -41,18 +41,20 @@ func NewCageRoutes(
 func (r *CageRoutes) AttachRoutes(router *gin.Engine) {
     userAuth := middleware.AuthMiddleware(r.TokenService, r.AuthRepo, "usuario")
     adminAuth := middleware.AuthMiddleware(r.TokenService, r.AuthRepo, "administrador")
-    authGroup := router.Group("/cages")
-    authGroup.Use(userAuth)
-    
+
+    userGroup := router.Group("/cages")
+    userGroup.Use(userAuth)
     {
-        authGroup.GET("/my-cages", r.GetCagesByUserController.GetByUser) 
-                adminGroup := authGroup.Group("")
-        adminGroup.Use(adminAuth)
-        {
-            adminGroup.POST("", r.CreateCageController.Create)
-            adminGroup.GET("", r.GetAllCagesController.GetAllCages)
-            adminGroup.PUT("/:id", r.UpdateCageController.UpdateUser)
-        }
-        authGroup.GET("/:id", r.GetCageController.GetCageByID)
+        userGroup.GET("/:id", r.GetCageController.GetCageByID) 
+        userGroup.GET("/user/cages", r.GetCagesByUserController.GetByUser) 
+        userGroup.PUT("/:id", r.UpdateCageController.UpdateUser)
+    }
+
+    adminGroup := router.Group("/admin/cages")
+    adminGroup.Use(adminAuth)
+    {
+        adminGroup.POST("", r.CreateCageController.Create)
+        adminGroup.GET("", r.GetAllCagesController.GetAllCages) 
+        adminGroup.PUT("/:id", r.UpdateCageController.UpdateUser) 
     }
 }

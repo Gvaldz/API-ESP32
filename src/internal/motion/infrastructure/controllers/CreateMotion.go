@@ -2,19 +2,33 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"esp32/src/internal/motion/application"
 	"esp32/src/internal/motion/domain"
+	cages 		"esp32/src/internal/cages/domain"
+	websocket   "esp32/src/internal/websocket/application"
+
 )
 
 type CreateMotionController struct {
 	createMotion *application.CreateMotion
+    wsService    *websocket.WebSocketService
+    cageRepo     cages.CageRepository
 }
 
-func NewCreateMotionController(createMotion *application.CreateMotion) *CreateMotionController {
-	return &CreateMotionController{createMotion: createMotion}
+func NewCreateMotionController(
+	createMotion *application.CreateMotion,
+	wsService	 *websocket.WebSocketService,
+    cageRepo 	 cages.CageRepository,
+	) *CreateMotionController {
+	return &CreateMotionController{        
+		createMotion: createMotion,
+        wsService:   wsService,
+        cageRepo:    cageRepo,}
 }
 
 func (h *CreateMotionController) Create(c *gin.Context) {
@@ -35,6 +49,25 @@ func (h *CreateMotionController) Create(c *gin.Context) {
 }
 
 func (h *CreateMotionController) ProcessMotion(motion domain.Motion) error {
-	fmt.Printf("Procesando movivimiento desde AMQP: %+v\n", motion)
-	return h.createMotion.Execute(motion)
+    fmt.Printf("Procesando movimiento desde AMQP: %+v\n", motion)
+    
+    if err := h.createMotion.Execute(motion); err != nil {
+        return err
+    }
+    
+    cage, err := h.cageRepo.GetCageByID(motion.IDHamster)
+    if err != nil {
+        return err
+    }
+    
+    if err := h.wsService.NotifyUser(cage.Idusuario, gin.H{
+        "event": "new_motion",
+        "data":  motion,
+        "cage_id": motion.IDHamster,
+        "timestamp": time.Now().Unix(),
+    }); err != nil {
+        log.Printf("Error notificando al usuario %d: %v", cage.Idusuario, err)
+    }
+    
+    return nil
 }
