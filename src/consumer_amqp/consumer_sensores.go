@@ -91,10 +91,10 @@ func (c *RabbitMQConsumer) Start() {
 			continue
 		}
 
-		log.Printf("Mensaje recibido: Sensor: %s, IDHamster: %s\n", sensorData.Sensor, sensorData.IDHamster)
+		log.Printf("Mensaje recibido: Sensor: %s, IDamster: %s\n", sensorData.Sensor, sensorData.IDHamster)
 
 
-		if sensorData.Sensor == ""{
+		if sensorData.Sensor == "idhamster"{
 
 			if sensorData.IDHamster == "" {
 				log.Println("Advertencia: ID no valido.")
