@@ -19,7 +19,6 @@ type CreateTemperatureController struct {
 	createTemperature 	*application.CreateTemperature
     wsService    		*websocket.WebSocketService
     cageRepo    		cages.CageRepository
-	userRepo    		users.UsersRepo
 	fcmSender     		*fcm.FCMSender
 }
 

@@ -46,7 +46,7 @@ func (r *CageRoutes) AttachRoutes(router *gin.Engine) {
     userGroup.Use(userAuth)
     {
         userGroup.GET("/:id", r.GetCageController.GetCageByID) 
-        userGroup.GET("/user/cages", r.GetCagesByUserController.GetByUser) 
+        userGroup.GET("/user/:id", r.GetCagesByUserController.GetByUser) 
         userGroup.PUT("/:id", r.UpdateCageController.UpdateUser)
     }
 
