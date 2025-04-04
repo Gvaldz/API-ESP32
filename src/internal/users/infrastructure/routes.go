@@ -12,6 +12,7 @@ type UserRoutes struct {
 	UpdateUserController       *controllers.UpdateUserController
 	UpdatePasswordController   *controllers.UpdatePasswordController
 	DeleteUserController 	   *controllers.DeleteUserController
+	FCMController              *controllers.FCMController
 }
 
 func NewUserRoutes(
@@ -21,6 +22,7 @@ func NewUserRoutes(
 	updateUserController 	   *controllers.UpdateUserController,
 	updatePasswordController   *controllers.UpdatePasswordController,
 	deleteUserController	   *controllers.DeleteUserController,
+	fcmcontroller			   *controllers.FCMController,
 ) *UserRoutes {
 	return &UserRoutes{
 		CreateUserController:     createUserController,
@@ -41,5 +43,6 @@ func (r *UserRoutes) AttachRoutes(router *gin.Engine) {
 		userGroup.PUT("/:id", r.UpdateUserController.UpdateUser)
 		userGroup.PUT("/password/:id", r.UpdatePasswordController.UpdatePassword)
 		userGroup.DELETE("/:id", r.DeleteUserController.Delete)
+		userGroup.POST("/fcm-token", r.FCMController.RegisterToken)
 	}
 }

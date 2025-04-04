@@ -1,11 +1,13 @@
 package app
 
 import (
+	"context"
 	"database/sql"
-	"esp32/src/core"
 	consumer_amqp "esp32/src/consumer_amqp"
+	"esp32/src/core"
 	login "esp32/src/internal/auth/infrastructure"
 	cages "esp32/src/internal/cages/infrastructure"
+	fcm "esp32/src/internal/fcm"
 	food "esp32/src/internal/food/infrastructure"
 	humidity "esp32/src/internal/humidity/infrastructure"
 	motion "esp32/src/internal/motion/infrastructure"
@@ -15,6 +17,7 @@ import (
 	websocketinfra "esp32/src/internal/websocket/infrastructure"
 	websocketc "esp32/src/internal/websocket/infrastructure/controllers"
 	"esp32/src/server"
+	"fmt"
 )
 
 type Application struct {
@@ -24,6 +27,7 @@ type Application struct {
 	AMQPConsumer  *consumer_amqp.RabbitMQConsumer
 	Hasher		  *core.BcryptHasher
 	tokenService  *core.JWTService
+	fcmSender     *fcm.FCMSender
 }
 
 func NewApplication() (*Application, error) {
@@ -38,19 +42,23 @@ func NewApplication() (*Application, error) {
 	if err != nil {
 		return nil, err
 	}
+	fcmSender, err := fcm.NewFCMSender(context.Background(), core.Config.FCM)
+	if err != nil {
+    return nil, fmt.Errorf("error inicializando FCM: %v", err)
+	}
 
 	hasher := core.NewBcryptHasher(12)
 	wsService := websocketapp.NewWebSocketService()
 	tokenService := core.NewJWTService()
+	usersDeps := users.NewUserDependencies(db, amqpConn, hasher, fcmSender)
 
 	wsHandler := websocketc.NewWebSocketController(wsService, *tokenService)
 	wsRoutes := websocketinfra.NewWebSocketRoutes(wsHandler)
-	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn, wsService)
+	cageDeps := cages.NewCageDependencies(db)
+	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn, wsService, fcmSender, usersDeps.UserRepo)
 	motionDeps := motion.NewMotionDependencies(db, amqpConn, wsService)
 	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn, wsService)
 	foodDeps := food.NewFoodDependencies(db, amqpConn, wsService)
-	cageDeps := cages.NewCageDependencies(db)
-	usersDeps := users.NewUserDependencies(db, amqpConn, hasher)
 	loginDeps := login.NewAuthDependencies(db, hasher, usersDeps.UserRepo)
 
 	server := server.NewServer(

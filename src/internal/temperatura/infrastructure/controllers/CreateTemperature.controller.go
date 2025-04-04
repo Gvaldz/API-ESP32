@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	users "esp32/src/internal/users/infrastructure"
+	fcm			 "esp32/src/internal/fcm"
 	cages "esp32/src/internal/cages/domain"
 	"esp32/src/internal/temperatura/application"
 	"esp32/src/internal/temperatura/domain"
@@ -14,20 +16,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 type CreateTemperatureController struct {
-	createTemperature *application.CreateTemperature
-    wsService    *websocket.WebSocketService
-    cageRepo     cages.CageRepository
+	createTemperature 	*application.CreateTemperature
+    wsService    		*websocket.WebSocketService
+    cageRepo    		cages.CageRepository
+	userRepo    		users.UsersRepo
+	fcmSender     		*fcm.FCMSender
 }
 
 func NewCreateTemperatureController(
 	createTemperature *application.CreateTemperature,
 	wsService	 *websocket.WebSocketService,
     cageRepo 	 cages.CageRepository,
+	userRepo	 users.UsersRepo,
+	fcmSender	 *fcm.FCMSender,
 	) *CreateTemperatureController {
 	return &CreateTemperatureController{        
 		createTemperature: createTemperature,
         wsService:   wsService,
-        cageRepo:    cageRepo,}
+        cageRepo:    cageRepo,
+		fcmSender:        fcmSender, 
+}
 }
 
 func (h *CreateTemperatureController) Create(c *gin.Context) {
@@ -65,8 +73,29 @@ func (h *CreateTemperatureController) ProcessTemperature(temperature domain.Temp
         "cage_id": temperature.IDHamster,
         "timestamp": time.Now().Unix(),
     }); err != nil {
-        log.Printf("Error notificando al usuario %d: %v", cage.Idusuario, err)
+        log.Printf("Error notificando al usuario %d via WebSocket: %v", cage.Idusuario, err)
     }
     
-    return nil
+    /*user, err := h.userRepo.GetUserByID(cage.Idusuario)
+    if err != nil {
+        return fmt.Errorf("error obteniendo usuario: %v", err)
+    }
+    
+    if user.FCMToken != "" {
+        payload := fcm.NotificationPayload{
+            Title: "Nueva temperatura registrada",
+            Body:  fmt.Sprintf("Jaula %d: %.2f°C", temperature.IDHamster, temperature.Temperatura),
+            Data: map[string]string{
+                "cage_id":    (string(temperature.IDHamster)),
+                "temperature": fmt.Sprintf("%.2f", temperature.Temperatura),
+                "timestamp":  time.Now().Format(time.RFC3339),
+            },
+        }
+        
+        if err := h.fcmSender.SendNotification(context.Background(), user.FCMToken, payload); err != nil {
+            log.Printf("Error enviando notificación FCM: %v", err)
+        }
+    }
+    */
+    return nil 
 }

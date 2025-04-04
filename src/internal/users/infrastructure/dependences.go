@@ -5,6 +5,7 @@ import (
 	"esp32/src/core"
 	"esp32/src/internal/users/application"
 	"esp32/src/internal/users/infrastructure/controllers"
+    "esp32/src/internal/fcm"
 )
 
 type UserDependencies struct {
@@ -12,16 +13,18 @@ type UserDependencies struct {
 	AMQP     *core.AMQPConnection
 	Hasher   *core.BcryptHasher
 	UserRepo *UsersRepo
+	FCMSender *fcm.FCMSender 
 }
 
-func NewUserDependencies(db *sql.DB, amqp *core.AMQPConnection, hasher *core.BcryptHasher) *UserDependencies {
+func NewUserDependencies(db *sql.DB, amqp *core.AMQPConnection, hasher *core.BcryptHasher, fcmSender *fcm.FCMSender) *UserDependencies {
 	userRepo := NewUsersRepo(db) 
 	
 	return &UserDependencies{
 		DB:       db,
 		AMQP:     amqp,
 		Hasher:   hasher,
-		UserRepo: userRepo, 
+		UserRepo: userRepo,
+		FCMSender: fcmSender, 
 	}
 }
 
@@ -32,6 +35,7 @@ func (d *UserDependencies) GetRoutes() *UserRoutes {
 	updateUserUseCase := application.NewUpdateUser(d.UserRepo)
 	updatePasswordUseCase := application.NewUpdatePassword(d.UserRepo, d.Hasher)
 	deleteUserUseCase := application.NewDeleteUser(d.UserRepo)
+	fcmController := controllers.NewFCMController(d.UserRepo)
 
 	createUserController := controllers.NewCreateUserController(createUserUseCase)
 	getUsersController := controllers.NewGetAllUsersController(getAllUserUseCase)
@@ -47,5 +51,6 @@ func (d *UserDependencies) GetRoutes() *UserRoutes {
 		updateUserController, 
 		updatePasswordController, 
 		deleteUserController,
+		fcmController, 
 	)
 }

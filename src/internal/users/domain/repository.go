@@ -7,4 +7,6 @@ type UserRepository interface {
 	UpdateUser(IdUsuario int32, user User) error
 	UpdatePassword(IdUsuario int32, password string) error
 	DeleteUser(IdUsuario int32) error
+    UpdateFCMToken(userID string, token string) error
+    GetFCMToken(userID int32) (string, error)
 }

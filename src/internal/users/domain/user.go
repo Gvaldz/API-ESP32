@@ -6,4 +6,5 @@ type User struct {
 	Correo 	string `json:"correo"`
 	Contrasena string `json:"contrasena"`
 	Tipo string `json:"tipo"`
+	FCMToken string `json:"fcm_token"`
 }
