@@ -3,12 +3,12 @@ package middleware
 import (
     "net/http"
     "strings"
-    auth "esp32/src/internal/auth/infrastructure"
+    auth "esp32/src/core"
 	tokenService "esp32/src/internal/auth/domain"
     "github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(tokenService tokenService.TokenService, authRepo *auth.AuthRepositoryImpl, requiredType string) gin.HandlerFunc {
+func AuthMiddleware(tokenService tokenService.TokenService, authRepo *auth.AuthRepository, requiredType string) gin.HandlerFunc {
     return func(c *gin.Context) {
         authHeader := c.GetHeader("Authorization")
         if authHeader == "" {

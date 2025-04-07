@@ -3,6 +3,7 @@ package controllers
 import (
 	"esp32/src/internal/users/domain"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,17 +15,17 @@ type FCMController struct {
 func NewFCMController(userRepo domain.UserRepository) *FCMController {
 	return &FCMController{userRepo: userRepo}
 }
-
 func (c *FCMController) RegisterToken(ctx *gin.Context) {
-    userIDInterface, exists := ctx.Get("user_id")
+    // Cambiar "user_id" por "userID" para que coincida con el middleware
+    userIDInterface, exists := ctx.Get("userID")
     if !exists {
         ctx.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
         return
     }
 
-    userID, ok := userIDInterface.(int32)
+    userID, ok := userIDInterface.(int32) // El tipo correcto que usa el middleware
     if !ok {
-        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "formato de ID de usuario inválido"})
+        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "formato de ID inválido"})
         return
     }
 
@@ -33,14 +34,15 @@ func (c *FCMController) RegisterToken(ctx *gin.Context) {
     }
 
     if err := ctx.ShouldBindJSON(&request); err != nil {
-        ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+        ctx.JSON(http.StatusBadRequest, gin.H{"error": "petición inválida"})
         return
     }
 
-    if err := c.userRepo.UpdateFCMToken((string(userID)), request.Token); err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update token"})
+    // Convertir correctamente el int32 a string
+    if err := c.userRepo.UpdateFCMToken(strconv.Itoa(int(userID)), request.Token); err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar token"})
         return
     }
 
-    ctx.JSON(http.StatusOK, gin.H{"message": "token updated"})
+    ctx.JSON(http.StatusOK, gin.H{"message": "token actualizado"})
 }

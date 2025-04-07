@@ -5,16 +5,15 @@ import (
     "esp32/src/core"
     "esp32/src/internal/auth/application"
     "esp32/src/internal/auth/infrastructure/controllers"
-    userRepo "esp32/src/internal/users/infrastructure"
 )
 
 type AuthDependencies struct {
-    DB       *sql.DB
-    Hasher   *core.BcryptHasher
-    UserRepo *userRepo.UsersRepo
+    DB        *sql.DB
+    Hasher    *core.BcryptHasher
+    UserRepo  *core.UserRepository
 }
 
-func NewAuthDependencies(db *sql.DB, hasher *core.BcryptHasher, userRepo *userRepo.UsersRepo) *AuthDependencies {
+func NewAuthDependencies(db *sql.DB, hasher *core.BcryptHasher, userRepo *core.UserRepository) *AuthDependencies {
     return &AuthDependencies{
         DB:       db,
         Hasher:   hasher,
@@ -23,7 +22,7 @@ func NewAuthDependencies(db *sql.DB, hasher *core.BcryptHasher, userRepo *userRe
 }
 
 func (d *AuthDependencies) GetRoutes() *AuthRoutes {
-    authRepo := NewAuthRepository(d.DB)
+    authRepo := core.NewAuthRepository(d.DB)
     tokenService := core.NewJWTService()
     
     loginUC := application.NewLogin(

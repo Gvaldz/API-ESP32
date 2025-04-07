@@ -8,7 +8,6 @@ import (
 	websocket "esp32/src/internal/websocket/application"
 	cages	  "esp32/src/internal/cages/infrastructure"
 	fcm		  "esp32/src/internal/fcm"
-	users      "esp32/src/internal/users/infrastructure"
 )
 
 type TemperatureDependencies struct {
@@ -16,10 +15,16 @@ type TemperatureDependencies struct {
     AMQP      *core.AMQPConnection
     WsService *websocket.WebSocketService
     FCMSender *fcm.FCMSender 
-    UserRepo  *users.UsersRepo 
+    UserRepo  *core.UserRepository  
 }
 
-func NewTemperatureDependencies(db *sql.DB, amqp *core.AMQPConnection, wsService *websocket.WebSocketService, fcmSender *fcm.FCMSender, userRepo *users.UsersRepo) *TemperatureDependencies {
+func NewTemperatureDependencies(
+    db *sql.DB, 
+    amqp *core.AMQPConnection, 
+    wsService *websocket.WebSocketService, 
+    fcmSender *fcm.FCMSender, 
+    userRepo *core.UserRepository,  
+) *TemperatureDependencies {
     return &TemperatureDependencies{
         DB:        db,
         AMQP:      amqp,
@@ -40,7 +45,7 @@ func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
 		createTemperatureUseCase, 
 		d.WsService, 
 		cageRepo,
-		*d.UserRepo,    
+		d.UserRepo,    
 		d.FCMSender,   
 	)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)

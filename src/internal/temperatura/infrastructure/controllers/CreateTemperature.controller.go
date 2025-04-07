@@ -1,17 +1,17 @@
 package controllers
 
 import (
+	"context"
+	core "esp32/src/core"
+	cages "esp32/src/internal/cages/domain"
+	fcm "esp32/src/internal/fcm"
+	"esp32/src/internal/temperatura/application"
+	"esp32/src/internal/temperatura/domain"
+	websocket "esp32/src/internal/websocket/application"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
-
-	users "esp32/src/internal/users/infrastructure"
-	fcm			 "esp32/src/internal/fcm"
-	cages "esp32/src/internal/cages/domain"
-	"esp32/src/internal/temperatura/application"
-	"esp32/src/internal/temperatura/domain"
-	websocket "esp32/src/internal/websocket/application"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +19,7 @@ type CreateTemperatureController struct {
 	createTemperature 	*application.CreateTemperature
     wsService    		*websocket.WebSocketService
     cageRepo    		cages.CageRepository
+	userRepo            *core.UserRepository
 	fcmSender     		*fcm.FCMSender
 }
 
@@ -26,14 +27,15 @@ func NewCreateTemperatureController(
 	createTemperature *application.CreateTemperature,
 	wsService	 *websocket.WebSocketService,
     cageRepo 	 cages.CageRepository,
-	userRepo	 users.UsersRepo,
+	userRepo	 *core.UserRepository,
 	fcmSender	 *fcm.FCMSender,
 	) *CreateTemperatureController {
 	return &CreateTemperatureController{        
 		createTemperature: createTemperature,
         wsService:   wsService,
         cageRepo:    cageRepo,
-		fcmSender:        fcmSender, 
+		fcmSender:   fcmSender, 
+        userRepo:    userRepo, 
 }
 }
 
@@ -55,46 +57,60 @@ func (h *CreateTemperatureController) Create(c *gin.Context) {
 }
 
 func (h *CreateTemperatureController) ProcessTemperature(temperature domain.Temperature) error {
-    fmt.Printf("Procesando temperatura desde AMQP: %+v\n", temperature)
+    log.Printf("[DEBUG] Iniciando procesamiento de temperatura: %+v", temperature)
     
     if err := h.createTemperature.Execute(temperature); err != nil {
+        log.Printf("[ERROR] Fallo al guardar temperatura: %v", err)
         return err
     }
-    
+    log.Printf("[DEBUG] Temperatura guardada en BD: %+v", temperature)
+
     cage, err := h.cageRepo.GetCageByID(temperature.IDHamster)
     if err != nil {
+        log.Printf("[ERROR] No se pudo obtener jaula %s: %v", temperature.IDHamster, err)
         return err
     }
-    
-    if err := h.wsService.NotifyUser(cage.Idusuario, gin.H{
+    log.Printf("[DEBUG] Jaula obtenida: %+v", cage)
+
+    wsData := gin.H{
         "event": "new_temperature",
         "data":  temperature,
         "cage_id": temperature.IDHamster,
         "timestamp": time.Now().Unix(),
-    }); err != nil {
-        log.Printf("Error notificando al usuario %d via WebSocket: %v", cage.Idusuario, err)
     }
     
-    /*user, err := h.userRepo.GetUserByID(cage.Idusuario)
+    if err := h.wsService.NotifyUser(cage.Idusuario, wsData); err != nil {
+        log.Printf("[WARN] Error notificando usuario %d via WebSocket: %v", cage.Idusuario, err)
+    } else {
+        log.Printf("[DEBUG] Notificación WebSocket enviada al usuario %d", cage.Idusuario)
+    }
+    
+    user, err := h.userRepo.GetUserByID(cage.Idusuario)
     if err != nil {
+        log.Printf("[ERROR] No se pudo obtener usuario %d: %v", cage.Idusuario, err)
         return fmt.Errorf("error obteniendo usuario: %v", err)
     }
     
     if user.FCMToken != "" {
         payload := fcm.NotificationPayload{
             Title: "Nueva temperatura registrada",
-            Body:  fmt.Sprintf("Jaula %d: %.2f°C", temperature.IDHamster, temperature.Temperatura),
+            Body:  fmt.Sprintf("Jaula %s: %.2f°C", temperature.IDHamster, temperature.Temperatura),
             Data: map[string]string{
-                "cage_id":    (string(temperature.IDHamster)),
+                "cage_id":     fmt.Sprintf("%s", temperature.IDHamster),
                 "temperature": fmt.Sprintf("%.2f", temperature.Temperatura),
-                "timestamp":  time.Now().Format(time.RFC3339),
+                "timestamp":   time.Now().Format(time.RFC3339),
             },
         }
         
         if err := h.fcmSender.SendNotification(context.Background(), user.FCMToken, payload); err != nil {
-            log.Printf("Error enviando notificación FCM: %v", err)
+            log.Printf("[ERROR] Fallo al enviar notificación FCM: %v", err)
+        } else {
+            log.Printf("[DEBUG] Notificación FCM enviada a token: %s", user.FCMToken)
         }
+    } else {
+        log.Printf("[DEBUG] Usuario %d no tiene FCMToken registrado", user.IdUsuario)
     }
-    */
-    return nil 
+
+    log.Printf("[INFO] Procesamiento completado para temperatura: %+v", temperature)
+    return nil
 }

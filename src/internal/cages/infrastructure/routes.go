@@ -4,7 +4,7 @@ import (
     "esp32/src/internal/cages/infrastructure/controllers"
     "esp32/src/server/middleware"
     "github.com/gin-gonic/gin"
-	authRepo     "esp32/src/internal/auth/infrastructure"
+    "esp32/src/core"
     tokenService "esp32/src/internal/auth/domain"
 )
 
@@ -15,7 +15,7 @@ type CageRoutes struct {
     GetCagesByUserController   *controllers.GetCagesByUserController
     UpdateCageController       *controllers.UpdateCageController
     TokenService                tokenService.TokenService 
-    AuthRepo                   *authRepo.AuthRepositoryImpl
+    AuthRepo                   *core.AuthRepository
 }
 
 func NewCageRoutes(
@@ -25,7 +25,7 @@ func NewCageRoutes(
     getCagesByUserController  *controllers.GetCagesByUserController,
     updateCageController      *controllers.UpdateCageController,
     tokenService             tokenService.TokenService,
-    authRepo                 *authRepo.AuthRepositoryImpl,
+    authRepo                 *core.AuthRepository,
 ) *CageRoutes {
     return &CageRoutes{
         CreateCageController:     createCageController,

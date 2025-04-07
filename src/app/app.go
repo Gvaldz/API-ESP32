@@ -3,19 +3,20 @@ package app
 import (
 	"context"
 	"database/sql"
-	consumer_amqp "esp32/src/consumer_amqp"
 	"esp32/src/core"
-	login "esp32/src/internal/auth/infrastructure"
-	cages "esp32/src/internal/cages/infrastructure"
-	fcm "esp32/src/internal/fcm"
-	food "esp32/src/internal/food/infrastructure"
-	humidity "esp32/src/internal/humidity/infrastructure"
-	motion "esp32/src/internal/motion/infrastructure"
-	temperature "esp32/src/internal/temperatura/infrastructure"
-	users "esp32/src/internal/users/infrastructure"
-	websocketapp "esp32/src/internal/websocket/application"
-	websocketinfra "esp32/src/internal/websocket/infrastructure"
-	websocketc "esp32/src/internal/websocket/infrastructure/controllers"
+	consumer_amqp		 "esp32/src/consumer_amqp"
+	login 				 "esp32/src/internal/auth/infrastructure"
+	cages 				 "esp32/src/internal/cages/infrastructure"
+	fcm 				 "esp32/src/internal/fcm"
+	food 				 "esp32/src/internal/food/infrastructure"
+	humidity 			 "esp32/src/internal/humidity/infrastructure"
+	motion 				 "esp32/src/internal/motion/infrastructure"
+	temperature 		 "esp32/src/internal/temperatura/infrastructure"
+	users 				 "esp32/src/internal/users/infrastructure"
+	websocketapp 		 "esp32/src/internal/websocket/application"
+	websocketinfra 		 "esp32/src/internal/websocket/infrastructure"
+	middleware 			 "esp32/src/server/middleware"
+	websocketc 			 "esp32/src/internal/websocket/infrastructure/controllers"
 	"esp32/src/server"
 	"fmt"
 )
@@ -50,27 +51,52 @@ func NewApplication() (*Application, error) {
 	hasher := core.NewBcryptHasher(12)
 	wsService := websocketapp.NewWebSocketService()
 	tokenService := core.NewJWTService()
-	usersDeps := users.NewUserDependencies(db, amqpConn, hasher, fcmSender)
+    userRepo := core.NewUserRepository(db).(*core.UserRepository)
+    authRepo := &core.AuthRepository{DB: db}
+	
+	usersDeps := users.NewUserDependencies(
+		db,
+		amqpConn,
+		hasher,
+		fcmSender,
+		tokenService,
+		authRepo, 
+		userRepo, 
+	)
+	
+
+	loginDeps := login.NewAuthDependencies(
+		db,
+		hasher,
+		userRepo, 
+	)
+
+	authMiddleware := middleware.AuthMiddleware(
+		tokenService,
+		authRepo,
+		"usuario",
+	)
 
 	wsHandler := websocketc.NewWebSocketController(wsService, *tokenService)
 	wsRoutes := websocketinfra.NewWebSocketRoutes(wsHandler)
 	cageDeps := cages.NewCageDependencies(db)
-	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn, wsService, fcmSender, usersDeps.UserRepo)
-	motionDeps := motion.NewMotionDependencies(db, amqpConn, wsService)
-	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn, wsService)
-	foodDeps := food.NewFoodDependencies(db, amqpConn, wsService)
-	loginDeps := login.NewAuthDependencies(db, hasher, usersDeps.UserRepo)
+	tempDeps := temperature.NewTemperatureDependencies(db, amqpConn, wsService, fcmSender, userRepo)
+	motionDeps := motion.NewMotionDependencies(db, amqpConn, wsService, fcmSender, userRepo)
+	humidityDeps := humidity.NewHumidityDependencies(db, amqpConn, wsService, fcmSender, userRepo)
+	foodDeps := food.NewFoodDependencies(db, amqpConn, wsService, fcmSender, userRepo)
 
-	server := server.NewServer(
-		tempDeps.GetRoutes(),
-		motionDeps.GetRoutes(),
-		humidityDeps.GetRoutes(),
-		foodDeps.GetRoutes(),
-		usersDeps.GetRoutes(),
-		cageDeps.GetRoutes(),
-		loginDeps.GetRoutes(),
-		wsRoutes,
-	)
+    
+    server := server.NewServer( 
+        tempDeps.GetRoutes(),
+        motionDeps.GetRoutes(),
+        humidityDeps.GetRoutes(),
+        foodDeps.GetRoutes(),
+        usersDeps.GetRoutes(),
+        cageDeps.GetRoutes(),
+        loginDeps.GetRoutes(),
+        wsRoutes,
+        authMiddleware,
+    )
 
 	consumer := consumer_amqp.NewRabbitMQConsumer(
 		amqpConn,
@@ -82,11 +108,13 @@ func NewApplication() (*Application, error) {
 	)
 
 	return &Application{
-		DB:           db,
-		AMQPConn:     amqpConn,
-		Server:       server,
-		AMQPConsumer: consumer,
-		Hasher: 	  hasher,	
+		DB:            db,
+		AMQPConn:      amqpConn,
+		Server:        server,
+		AMQPConsumer:  consumer,
+		Hasher:        hasher,
+		tokenService:  tokenService,
+		fcmSender:     fcmSender,
 	}, nil
 }
 

@@ -23,7 +23,8 @@ type Server struct {
     usersRouters       *usersRouters.UserRoutes
     cagesRouters       *cagesRouters.CageRoutes
     loginRouters       *loginRouters.AuthRoutes
-    websocketRouters   *websocketRouters.WebSocketRoutes 
+    websocketRouters   *websocketRouters.WebSocketRoutes
+    authMiddleware     gin.HandlerFunc
 }
 
 func NewServer(
@@ -35,7 +36,8 @@ func NewServer(
     cageRoutes    *cagesRouters.CageRoutes,
     loginRoutes   *loginRouters.AuthRoutes,
     wsRoutes      *websocketRouters.WebSocketRoutes,
-) *Server {
+    authMiddleware gin.HandlerFunc, 
+)*Server {
     r := gin.Default()
 
     r.Use(cors.New(cors.Config{
@@ -55,6 +57,7 @@ func NewServer(
         cagesRouters:       cageRoutes,
         loginRouters:       loginRoutes,
         websocketRouters:   wsRoutes,
+        authMiddleware: authMiddleware,
     }
 }
 
