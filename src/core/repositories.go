@@ -30,7 +30,7 @@ func (r *AuthRepository) UpdateLastLogin(userID int32) error {
 
 func (r *AuthRepository) FindUserByID(userID int32) (users.User, error) {
 	var user users.User
-	query := `SELECT idusuarios, correo, contrasena, FCMtoken tipo FROM usuarios WHERE idusuarios = ?`
+	query := `SELECT idusuarios, correo, contrasena, FCMtoken, tipo FROM usuarios WHERE idusuarios = ?`
 	err := r.DB.QueryRow(query, userID).Scan(&user.IdUsuario, &user.Correo, &user.Contrasena, &user.Tipo, &user.FCMToken)
 	return user, err
 }

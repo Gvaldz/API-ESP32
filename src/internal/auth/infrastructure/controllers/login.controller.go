@@ -29,9 +29,10 @@ func (c *LoginController) Login(ctx *gin.Context) {
     }
     
     ctx.Header("Authorization", "Bearer "+token.Token)
+    
     ctx.JSON(http.StatusOK, gin.H{
-        "token":      token.Token,
+        "message":    "Autenticación exitosa",
         "expires_at": token.ExpiresAt,
-        "user_type":  userType, 
+        "user_type":  userType,
     })
 }
