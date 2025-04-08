@@ -3,32 +3,32 @@ package infrastructure
 import (
 	"database/sql"
 	"esp32/src/core"
-	"esp32/src/internal/fcm"
+	"esp32/src/internal/services/fcm"
 	"esp32/src/internal/users/application"
 	"esp32/src/internal/users/infrastructure/controllers"
 	middleware "esp32/src/server/middleware"
 )
 
 type UserDependencies struct {
-	DB       		*sql.DB
-	AMQP     		*core.AMQPConnection
-	Hasher   		*core.BcryptHasher
-	UserRepo 		*core.UserRepository
-	FCMSender 		*fcm.FCMSender 
-	AuthRepo      	*core.AuthRepository
-	TokenService	*core.JWTService
+	DB           *sql.DB
+	AMQP         *core.AMQPConnection
+	Hasher       *core.BcryptHasher
+	UserRepo     *core.UserRepository
+	FCMSender    *fcm.FCMSender
+	AuthRepo     *core.AuthRepository
+	TokenService *core.JWTService
 }
 
-func NewUserDependencies(db *sql.DB, amqp *core.AMQPConnection, hasher *core.BcryptHasher, fcmSender *fcm.FCMSender,tokenService *core.JWTService, authRepo *core.AuthRepository, userRepo *core.UserRepository) *UserDependencies {
-	
+func NewUserDependencies(db *sql.DB, amqp *core.AMQPConnection, hasher *core.BcryptHasher, fcmSender *fcm.FCMSender, tokenService *core.JWTService, authRepo *core.AuthRepository, userRepo *core.UserRepository) *UserDependencies {
+
 	return &UserDependencies{
-		DB:       db,
-		AMQP:     amqp,
-		Hasher:   hasher,
-		FCMSender: fcmSender, 
+		DB:           db,
+		AMQP:         amqp,
+		Hasher:       hasher,
+		FCMSender:    fcmSender,
 		TokenService: tokenService,
-        AuthRepo: authRepo,
-		UserRepo: userRepo,
+		AuthRepo:     authRepo,
+		UserRepo:     userRepo,
 	}
 }
 
@@ -49,15 +49,14 @@ func (d *UserDependencies) GetRoutes() *UserRoutes {
 	deleteUserController := controllers.NewDeleteUserController(deleteUserUseCase)
 	authMiddleware := middleware.AuthMiddleware(d.TokenService, d.AuthRepo, "usuario")
 
-
 	return NewUserRoutes(
 		createUserController,
-		getUsersController, 
-		getUserController, 
-		updateUserController, 
-		updatePasswordController, 
+		getUsersController,
+		getUserController,
+		updateUserController,
+		updatePasswordController,
 		deleteUserController,
-		fcmController, 
+		fcmController,
 		authMiddleware,
 	)
 }

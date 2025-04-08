@@ -2,9 +2,9 @@ package core
 
 import (
 	"database/sql"
-	"fmt"
-	"esp32/src/internal/auth/domain"
+	"esp32/src/internal/services/auth/domain"
 	users "esp32/src/internal/users/domain"
+	"fmt"
 )
 
 type AuthRepository struct {
@@ -85,17 +85,17 @@ func (r *UserRepository) GetAllUsers() ([]users.User, error) {
 }
 
 func (r *UserRepository) GetUserByID(iduser int32) (users.User, error) {
-    if r.DB == nil {
-        return users.User{}, fmt.Errorf("database connection is nil")
-    }
-    
-    var user users.User
-    query := "SELECT idusuarios, nombre, correo, FCMtoken FROM usuarios WHERE idusuarios = ?"
-    err := r.DB.QueryRow(query, iduser).Scan(&user.IdUsuario, &user.Nombre, &user.Correo, &user.FCMToken)
-    if err != nil {
-        return user, fmt.Errorf("error al obtener usuario: %w", err)
-    }
-    return user, nil
+	if r.DB == nil {
+		return users.User{}, fmt.Errorf("database connection is nil")
+	}
+
+	var user users.User
+	query := "SELECT idusuarios, nombre, correo, FCMtoken FROM usuarios WHERE idusuarios = ?"
+	err := r.DB.QueryRow(query, iduser).Scan(&user.IdUsuario, &user.Nombre, &user.Correo, &user.FCMToken)
+	if err != nil {
+		return user, fmt.Errorf("error al obtener usuario: %w", err)
+	}
+	return user, nil
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (users.User, error) {

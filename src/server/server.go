@@ -1,15 +1,15 @@
 package server
 
 import (
+	loginRouters "esp32/src/internal/auth/infrastructure"
+	cagesRouters "esp32/src/internal/sensores/cages/infrastructure"
+	foodRouters "esp32/src/internal/sensores/food/infrastructure"
+	humidityRouters "esp32/src/internal/sensores/humidity/infrastructure"
+	motionRouters "esp32/src/internal/sensores/motion/infrastructure"
+	temperatureRouters "esp32/src/internal/sensores/temperatura/infrastructure"
+	websocketRouters "esp32/src/internal/services/websocket/infrastructure"
+	usersRouters "esp32/src/internal/users/infrastructure"
 
-	temperatureRouters 	"esp32/src/internal/temperatura/infrastructure"
-	motionRouters 		"esp32/src/internal/motion/infrastructure"
-	humidityRouters 	"esp32/src/internal/humidity/infrastructure"
-	foodRouters 		"esp32/src/internal/food/infrastructure"
-	usersRouters		"esp32/src/internal/users/infrastructure"
-	cagesRouters		"esp32/src/internal/cages/infrastructure"
-	loginRouters		"esp32/src/internal/auth/infrastructure"
-	websocketRouters "esp32/src/internal/websocket/infrastructure"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
