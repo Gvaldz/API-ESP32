@@ -15,34 +15,47 @@ type FCMController struct {
 func NewFCMController(userRepo domain.UserRepository) *FCMController {
 	return &FCMController{userRepo: userRepo}
 }
+
 func (c *FCMController) RegisterToken(ctx *gin.Context) {
-    // Cambiar "user_id" por "userID" para que coincida con el middleware
     userIDInterface, exists := ctx.Get("userID")
     if !exists {
         ctx.JSON(http.StatusUnauthorized, gin.H{"error": "usuario no autenticado"})
         return
     }
 
-    userID, ok := userIDInterface.(int32) // El tipo correcto que usa el middleware
+    userID, ok := userIDInterface.(int32) 
     if !ok {
         ctx.JSON(http.StatusInternalServerError, gin.H{"error": "formato de ID inválido"})
         return
     }
 
     var request struct {
-        Token string `json:"token"`
+        FCMToken string `json:"fcmToken" binding:"required"` 
     }
 
     if err := ctx.ShouldBindJSON(&request); err != nil {
-        ctx.JSON(http.StatusBadRequest, gin.H{"error": "petición inválida"})
+        ctx.JSON(http.StatusBadRequest, gin.H{
+            "error": "petición inválida",
+            "details": err.Error(), 
+        })
         return
     }
 
-    // Convertir correctamente el int32 a string
-    if err := c.userRepo.UpdateFCMToken(strconv.Itoa(int(userID)), request.Token); err != nil {
-        ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error al actualizar token"})
+    if request.FCMToken == "" {
+        ctx.JSON(http.StatusBadRequest, gin.H{"error": "fcmToken es requerido"})
         return
     }
 
-    ctx.JSON(http.StatusOK, gin.H{"message": "token actualizado"})
+    if err := c.userRepo.UpdateFCMToken(strconv.Itoa(int(userID)), request.FCMToken); err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{
+            "error": "error al actualizar token FCM",
+            "details": err.Error(),
+        })
+        return
+    }
+
+    ctx.JSON(http.StatusOK, gin.H{
+        "message": "token FCM actualizado correctamente",
+        "success": true,
+    })
 }

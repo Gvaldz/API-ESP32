@@ -174,14 +174,14 @@ func (r *UserRepository) DeleteUser(id int32) error {
 }
 
 func (r *UserRepository) UpdateFCMToken(userID string, token string) error {
-	query := "UPDATE usuarios SET fcm_token = ? WHERE idusuarios = ?"
+	query := "UPDATE usuarios SET FCMtoken = ? WHERE idusuarios = ?"
 	_, err := r.DB.Exec(query, token, userID)
 	return err
 }
 
 func (r *UserRepository) GetFCMToken(userID int32) (string, error) {
 	var token string
-	query := "SELECT fcm_token FROM usuarios WHERE idusuarios = ?"
+	query := "SELECT FCMtoken FROM usuarios WHERE idusuarios = ?"
 	err := r.DB.QueryRow(query, userID).Scan(&token)
 	if err != nil {
 		return "", err
