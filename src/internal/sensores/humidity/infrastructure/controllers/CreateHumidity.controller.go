@@ -1,14 +1,11 @@
 package controllers
 
 import (
-	"context"
 	"esp32/src/core"
 	cages "esp32/src/internal/sensores/cages/domain"
 	"esp32/src/internal/sensores/humidity/application"
 	"esp32/src/internal/sensores/humidity/domain"
-	fcm "esp32/src/internal/services/fcm"
 	websocket "esp32/src/internal/services/websocket/application"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -21,7 +18,6 @@ type CreateHumidityController struct {
 	wsService      *websocket.WebSocketService
 	cageRepo       cages.CageRepository
 	userRepo       *core.UserRepository
-	fcmSender      *fcm.FCMSender
 }
 
 func NewCreateHumidityController(
@@ -29,14 +25,12 @@ func NewCreateHumidityController(
 	wsService *websocket.WebSocketService,
 	cageRepo cages.CageRepository,
 	userRepo *core.UserRepository,
-	fcmSender *fcm.FCMSender,
 ) *CreateHumidityController {
 	return &CreateHumidityController{
 		createHumidity: createHumidity,
 		wsService:      wsService,
 		cageRepo:       cageRepo,
 		userRepo:       userRepo,
-		fcmSender:      fcmSender,
 	}
 }
 
@@ -59,7 +53,7 @@ func (h *CreateHumidityController) Create(c *gin.Context) {
 
 func (h *CreateHumidityController) ProcessHumidity(humidity domain.Humidity) error {
 	log.Printf("[DEBUG] Iniciando procesamiento de humedad: %+v", humidity)
-	
+
 	if err := h.createHumidity.Execute(humidity); err != nil {
 		log.Printf("[ERROR] Fallo al guardar humedad: %v", err)
 		return err
@@ -84,32 +78,6 @@ func (h *CreateHumidityController) ProcessHumidity(humidity domain.Humidity) err
 		log.Printf("[WARN] Error notificando usuario %d via WebSocket: %v", cage.Idusuario, err)
 	} else {
 		log.Printf("[DEBUG] Notificación WebSocket enviada al usuario %d", cage.Idusuario)
-	}
-
-	user, err := h.userRepo.GetUserByID(cage.Idusuario)
-	if err != nil {
-		log.Printf("[ERROR] No se pudo obtener usuario %d: %v", cage.Idusuario, err)
-		return fmt.Errorf("error obteniendo usuario: %v", err)
-	}
-
-	if user.FCMToken != "" {
-		payload := fcm.NotificationPayload{
-			Title: "Nueva humedad registrada",
-			Body:  fmt.Sprintf("Jaula %s: %.2f%%", humidity.IDHamster, humidity.Humedad),
-			Data: map[string]string{
-				"cage_id":  fmt.Sprintf("%d", humidity.IDHamster),
-				"humidity": fmt.Sprintf("%.2f", humidity.Humedad),
-				"timestamp": time.Now().Format(time.RFC3339),
-			},
-		}
-
-		if err := h.fcmSender.SendNotification(context.Background(), user.FCMToken, payload); err != nil {
-			log.Printf("[ERROR] Fallo al enviar notificación FCM: %v", err)
-		} else {
-			log.Printf("[DEBUG] Notificación FCM enviada a token: %s", user.FCMToken)
-		}
-	} else {
-		log.Printf("[DEBUG] Usuario %d no tiene FCMToken registrado", user.IdUsuario)
 	}
 
 	log.Printf("[INFO] Procesamiento completado para humedad: %+v", humidity)

@@ -6,32 +6,28 @@ import (
 	cages "esp32/src/internal/sensores/cages/infrastructure"
 	"esp32/src/internal/sensores/temperatura/application"
 	"esp32/src/internal/sensores/temperatura/infrastructure/controllers"
-	fcm "esp32/src/internal/services/fcm"
 	websocket "esp32/src/internal/services/websocket/application"
 )
 
 type TemperatureDependencies struct {
-    DB        *sql.DB
-    AMQP      *core.AMQPConnection
-    WsService *websocket.WebSocketService
-    FCMSender *fcm.FCMSender 
-    UserRepo  *core.UserRepository  
+	DB        *sql.DB
+	AMQP      *core.AMQPConnection
+	WsService *websocket.WebSocketService
+	UserRepo  *core.UserRepository
 }
 
 func NewTemperatureDependencies(
-    db *sql.DB, 
-    amqp *core.AMQPConnection, 
-    wsService *websocket.WebSocketService, 
-    fcmSender *fcm.FCMSender, 
-    userRepo *core.UserRepository,  
+	db *sql.DB,
+	amqp *core.AMQPConnection,
+	wsService *websocket.WebSocketService,
+	userRepo *core.UserRepository,
 ) *TemperatureDependencies {
-    return &TemperatureDependencies{
-        DB:        db,
-        AMQP:      amqp,
-        WsService: wsService,
-        FCMSender: fcmSender,
-        UserRepo:  userRepo,
-    }
+	return &TemperatureDependencies{
+		DB:        db,
+		AMQP:      amqp,
+		WsService: wsService,
+		UserRepo:  userRepo,
+	}
 }
 
 func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
@@ -42,11 +38,10 @@ func (d *TemperatureDependencies) GetRoutes() *TemperatureRoutes {
 	getByHamsterUseCase := application.NewGetByHamster(temperatureRepo)
 
 	createTemperatureController := controllers.NewCreateTemperatureController(
-		createTemperatureUseCase, 
-		d.WsService, 
+		createTemperatureUseCase,
+		d.WsService,
 		cageRepo,
-		d.UserRepo,    
-		d.FCMSender,   
+		d.UserRepo,
 	)
 	getByHamsterController := controllers.NewGetByHamsterController(getByHamsterUseCase)
 

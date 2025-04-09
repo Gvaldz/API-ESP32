@@ -2,7 +2,6 @@ package infrastructure
 
 import (
 	"database/sql"
-	"esp32/src/core"
 	"esp32/src/internal/sensores/cages/application"
 	"esp32/src/internal/sensores/cages/infrastructure/controllers"
 )
@@ -17,8 +16,6 @@ func NewCageDependencies(db *sql.DB) *CageDependencies {
 
 func (d *CageDependencies) GetRoutes() *CageRoutes {
 	cageRepo := NewCageRepo(d.DB)
-	tokenService := core.NewJWTService()
-	authRepo := core.NewAuthRepository(d.DB).(*core.AuthRepository)
 
 	createCageUseCase := application.NewCreateCage(cageRepo)
 	getAllCageUseCase := application.NewGetAllCages(cageRepo)
@@ -32,5 +29,5 @@ func (d *CageDependencies) GetRoutes() *CageRoutes {
 	getCageByUserController := controllers.NewGetCagesByUserController(getCageByUserUseCase)
 	updateCageController := controllers.NewUpdateCageController(updateCageUseCase)
 
-	return NewCageRoutes(createCageController, getAllCagesController, getCageByIdController, getCageByUserController, updateCageController, tokenService, authRepo)
+	return NewCageRoutes(createCageController, getAllCagesController, getCageByIdController, getCageByUserController, updateCageController)
 }
